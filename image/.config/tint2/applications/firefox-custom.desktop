@@ -1,0 +1,9 @@
+# COMMENTED OUT - FIREFOX SETTINGS (DO NOT DELETE)
+# [Desktop Entry]
+# Name=Firefox Custom
+# Comment=Open Firefox with custom URL
+# Exec=firefox-esr --no-remote  --private-window --remote-debugging-port=9222
+# Icon=firefox-esr
+# Terminal=false
+# Type=Application
+# Categories=Network;WebBrowser;

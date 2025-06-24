@@ -1,0 +1,22 @@
+.venv
+.ruff_cache
+__pycache__
+.pytest_cache
+
+# Next.js build artifacts
+computer_using_agent/chat/.next/
+computer_using_agent/chat/out/
+computer_using_agent/chat/build/
+
+# Node.js dependencies
+computer_using_agent/chat/node_modules/
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Persistent user data (keep directory structure but ignore contents)
+user_data/*
+!user_data/.gitkeep
+computer_using_agent/chat/node_modules/

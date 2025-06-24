@@ -1,0 +1,34 @@
+You are helping test the chat stream issue (#3) using Puppeteer automation. Handle the following test command: $ARGUMENTS
+
+Available subcommands:
+- `setup` - Build the Puppeteer Docker testing environment
+- `test` - Run the automated chat stream test to reproduce the issue
+- `start` - Start the application environment for testing
+- `logs` - View debug logs from the application
+- `debug` - Take screenshot and gather debugging information
+
+For setup:
+1. Build the Puppeteer Docker image: `docker build -t puppeteer-test -f Dockerfile.puppeteer .`
+2. Ensure test dependencies are available
+3. Create logs directory if it doesn't exist: `mkdir -p logs`
+
+For testing:
+1. Ensure application is running on localhost:3001 and localhost:8000
+2. Run the Puppeteer test: `docker run --rm -v "$(pwd)":/workspace -w /workspace --network host puppeteer-test npm test`
+3. The test will reproduce the chat stream ending issue by:
+   - Sending first message: "Go to kay.com and wait for the next task"
+   - Waiting for completion
+   - Sending second message: "Are you still there"
+   - Checking if the second message gets a response
+
+For starting the application:
+1. Run `./run.sh` to start both services
+2. Wait for services to be available on ports 3001 and 8000
+3. Confirm both frontend and backend are responsive
+
+For viewing logs:
+1. Check application logs in the logs/ directory
+2. Monitor real-time logs with tail -f
+3. Look for stream closure or connection issues
+
+The test should identify when the chat stream closes after the first automation and provide debugging information including screenshots and console logs.
