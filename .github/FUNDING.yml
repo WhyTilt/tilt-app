@@ -1,0 +1,17 @@
+# GitHub Sponsors configuration for AutomagicIT
+# Enable GitHub Sponsors button in repository
+# Commented out until GitHub Sponsors and banking setup is complete
+
+# github: AutomagicIT
+
+# Optional: Add other funding platforms if needed in the future
+# patreon: username
+# open_collective: username
+# ko_fi: username
+# tidelift: package/manager
+# community_bridge: project-name
+# liberapay: username
+# issuehunt: username
+# otechie: username
+# lfx_crowdfunding: project-name
+# custom: ['link1', 'link2']

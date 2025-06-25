@@ -13,6 +13,23 @@ AutomagicIT is a sophisticated computer automation platform that transforms natu
 
 ⭐️ **Your star powers our automation magic**
 
+<!-- ## 💖 Support AutomagicIT
+
+Help us continue developing cutting-edge automation tools! Your support enables us to:
+- 🚀 Add new AI models and providers
+- 🛠️ Build advanced automation capabilities  
+- 📚 Create comprehensive documentation and tutorials
+- 🐛 Provide faster bug fixes and feature development
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-EA4AAA?logo=github&logoColor=white)](https://github.com/sponsors/AutomagicIT)
+
+**Why GitHub Sponsors?**
+- ✅ Integrated with GitHub (adds credibility)
+- ✅ Easy for developers already on GitHub
+- ✅ Supports one-time and recurring payments
+- ✅ Multiple tiers: $5, $25, $50+ monthly options
+- ✅ Show your support directly on your GitHub profile -->
+
 ## About
 
 AutomagicIT combines the power of large language models with practical computer automation tools to create a comprehensive testing and automation platform. Whether you're automating e-commerce workflows, performing quality assurance testing, or extracting data from complex web applications, AutomagicIT provides the visual feedback and programmatic control you need.
