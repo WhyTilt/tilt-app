@@ -11,13 +11,30 @@ cd /home/computeragent
 export DISPLAY=:${DISPLAY_NUM}
 echo "Starting desktop environment..."
 
-./xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log" &
-./tint2_startup.sh 2>&1 | tee -a "$LOGS_DIR/tint2.log" &
+# Start Xvfb first and wait for it to be ready
+echo "Starting Xvfb..." | tee -a "$LOGS_DIR/startup.log"
+./xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log"
+
+# Start window manager
+echo "Starting window manager..." | tee -a "$LOGS_DIR/startup.log"
 ./mutter_startup.sh 2>&1 | tee -a "$LOGS_DIR/mutter.log" &
+
+# Start tint2 panel
+echo "Starting tint2 panel..." | tee -a "$LOGS_DIR/startup.log"
+./tint2_startup.sh 2>&1 | tee -a "$LOGS_DIR/tint2.log" &
+
+# Wait a moment for desktop components to initialize
+sleep 3
+
+# Start x11vnc (depends on Xvfb being ready)
+echo "Starting x11vnc..." | tee -a "$LOGS_DIR/startup.log"
 ./x11vnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/x11vnc.log" &
+
+# Start noVNC (depends on x11vnc)
+echo "Starting noVNC..." | tee -a "$LOGS_DIR/startup.log"
 ./novnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/novnc.log" &
 
-# Wait a moment for desktop to initialize
+# Wait for VNC to be ready
 sleep 2
 
 # MongoDB is already started by entrypoint.sh - no need to start again
