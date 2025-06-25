@@ -3,8 +3,11 @@
 [![License](https://img.shields.io/badge/License-Small%20Business%20Source-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204-FF6B35?logo=anthropic&logoColor=white)](https://www.anthropic.com)
+[![Website](https://img.shields.io/badge/Website-automagicit.com-FF6B35?logo=safari&logoColor=white)](https://automagicit.com)
+[![X](https://img.shields.io/badge/X-@_automagicit-1DA1F2?logo=x&logoColor=white)](https://x.com/_automagicit)
+[![YouTube](https://img.shields.io/badge/YouTube-automagicit-FF0000?logo=youtube&logoColor=white)](https://youtube.com/@automagicit)
 
-**Advanced Computer Automation System powered by Claude AI**
+**Advanced Computer Automation System powered by Claude Sonnet 4**
 
 AutomagicIT is a sophisticated computer automation platform that transforms natural language instructions into automated workflows. Built on Anthropic's Computer Use API, it provides intelligent, AI-driven automation for web testing, UI interaction, and complex task execution through a containerized virtual desktop environment.
 
@@ -62,40 +65,18 @@ AutomagicIT is built as a multi-container system with clear separation of concer
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/the-automator.git
+git clone https://github.com/AutomagicIT/the-automator.git
 cd the-automator
 
 # Set your API key
 export ANTHROPIC_API_KEY=your_api_key_here
 
 # Build and run with persistent data
-./build.sh
 ./run.sh
 ```
 
-Open your browser to [http://localhost:8080](http://localhost:8080) and start automating!
+Open your browser to [http://localhost:3001](http://localhost:3001) and start automating!
 
-### Manual Setup
-
-If you prefer manual control:
-
-```bash
-# Build the Docker image
-docker build -t automagicit:latest .
-
-# Run with Anthropic API
-docker run \
-    -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
-    -v $HOME/.anthropic:/home/computeragent/.anthropic \
-    -v $(pwd)/user_data:/home/computeragent \
-    -p 5900:5900 \
-    -p 8000:8000 \
-    -p 3001:3001 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -p 27017:27017 \
-    -it automagicit:latest
-```
 
 ## Features
 
@@ -166,13 +147,15 @@ export VERTEX_REGION=us-central1
 ./run.sh --provider vertex
 ```
 
+#### Coming soon - Automagic 7b
+
 ## Interface Access
 
 Once running, AutomagicIT provides multiple access points:
 
-- **Main Interface**: [http://localhost:8080](http://localhost:8080) - Complete automation interface
-- **API Server**: [http://localhost:8000](http://localhost:8000) - Direct API access
-- **Frontend Dev**: [http://localhost:3001](http://localhost:3001) - Next.js development server
+- **Frontend**: [http://localhost:3001](http://localhost:3001) - Next.js application server
+- **Main Interface**: [http://localhost:8080](http://localhost:8080) - Combined Next.js frontend with desktop view
+- **Python API**: [http://localhost:8000](http://localhost:8000) - FastAPI backend server
 - **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
 - **VNC Client**: `vnc://localhost:5900` - For external VNC clients
 
@@ -189,28 +172,13 @@ Once running, AutomagicIT provides multiple access points:
 | `WIDTH` | Desktop resolution width | 1024 |
 | `HEIGHT` | Desktop resolution height | 768 |
 
-### Task Mode
-
-Run AutomagicIT in dedicated task execution mode:
-
-```bash
-./run.sh --tasks
-```
-
-This mode optimizes for batch task processing with enhanced MongoDB integration.
 
 ## Development
 
 ### Local Development Setup
 
 ```bash
-# Install dependencies
-pip install -r computer_using_agent/requirements.txt
-cd computer_using_agent/chat && npm install
-
-# Run components separately
-python -m computer_using_agent.api_service.main  # Backend (port 8000)
-cd computer_using_agent/chat && npm run dev       # Frontend (port 3001)
+./build.sh
 ```
 
 ### Adding Custom Tools
@@ -231,13 +199,7 @@ cd computer_using_agent/chat && npm run dev       # Frontend (port 3001)
 
 ### Testing
 
-```bash
-# Python tests
-pytest tests/
-
-# Frontend tests
-cd computer_using_agent/chat && npm test
-```
+We need some work here :D
 
 ## Performance Optimization
 
@@ -268,18 +230,21 @@ newgrp docker
 
 ## Community & Support
 
+- 🌐 [Website](https://automagicit.com)
+- 📺 [YouTube](https://youtube.com/@automagicit)
+- 🐦 [X (Twitter)](https://x.com/_automagicit)
 - 📄 [Documentation](CLAUDE.md)
 - 🤝 [Contributing](CONTRIBUTING.md)
 - 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
-- 🐛 [Issues](https://github.com/your-username/the-automator/issues)
-- 💬 [Discussions](https://github.com/your-username/the-automator/discussions)
+- 🐛 [Issues](https://github.com/AutomagicIT/the-automator/issues)
+- 💬 [Discussions](https://github.com/AutomagicIT/the-automator/discussions)
 
 ## Licensing
 
 This project is dual-licensed under a Small Business Source License and a separate commercial license.
 
 - **Free to use** for businesses with fewer than 50 employees and less than $250,000 USD annual revenue
-- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue)
+- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue) - Contact sales@automagicit.com
 
 ### License Files
 
