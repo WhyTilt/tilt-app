@@ -1,208 +1,291 @@
-# Anthropic Computer Use Demo
+# AutomagicIT
 
-> [!NOTE]
-> Now featuring support for the new Claude 4 models! The latest Claude 4 Sonnet (claude-sonnet-4-20250514) is now the default model, with Claude 4 Opus (claude-opus-4-20250514) also available. These models bring next-generation capabilities with the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
+[![License](https://img.shields.io/badge/License-Small%20Business%20Source-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204-FF6B35?logo=anthropic&logoColor=white)](https://www.anthropic.com)
 
-> [!CAUTION]
-> Computer use is a beta feature. Please be aware that computer use poses unique risks that are distinct from standard API features or chat interfaces. These risks are heightened when using computer use to interact with the internet. To minimize risks, consider taking precautions such as:
->
-> 1. Use a dedicated virtual machine or container with minimal privileges to prevent direct system attacks or accidents.
-> 2. Avoid giving the model access to sensitive data, such as account login information, to prevent information theft.
-> 3. Limit internet access to an allowlist of domains to reduce exposure to malicious content.
-> 4. Ask a human to confirm decisions that may result in meaningful real-world consequences as well as any tasks requiring affirmative consent, such as accepting cookies, executing financial transactions, or agreeing to terms of service.
->
-> In some circumstances, Claude will follow commands found in content even if it conflicts with the user's instructions. For example, instructions on webpages or contained in images may override user instructions or cause Claude to make mistakes. We suggest taking precautions to isolate Claude from sensitive data and actions to avoid risks related to prompt injection.
->
-> Finally, please inform end users of relevant risks and obtain their consent prior to enabling computer use in your own products.
+**Advanced Computer Automation System powered by Claude AI**
 
-This repository helps you get started with computer use on Claude, with reference implementations of:
+AutomagicIT is a sophisticated computer automation platform that transforms natural language instructions into automated workflows. Built on Anthropic's Computer Use API, it provides intelligent, AI-driven automation for web testing, UI interaction, and complex task execution through a containerized virtual desktop environment.
 
-- Build files to create a Docker container with all necessary dependencies
-- A computer use agent loop using the Anthropic API, Bedrock, or Vertex to access Claude 3.5 Sonnet, Claude 3.7 Sonnet, Claude 4 Sonnet, and Claude 4 Opus models
-- Anthropic-defined computer use tools
-- A streamlit app for interacting with the agent loop
+⭐️ **Your star powers our automation magic**
 
-Please use [this form](https://forms.gle/BT1hpBrqDPDUrCqo7) to provide feedback on the quality of the model responses, the API itself, or the quality of the documentation - we cannot wait to hear from you!
+## About
 
-> [!IMPORTANT]
-> The Beta API used in this reference implementation is subject to change. Please refer to the [API release notes](https://docs.anthropic.com/en/release-notes/api) for the most up-to-date information.
+AutomagicIT combines the power of large language models with practical computer automation tools to create a comprehensive testing and automation platform. Whether you're automating e-commerce workflows, performing quality assurance testing, or extracting data from complex web applications, AutomagicIT provides the visual feedback and programmatic control you need.
 
-> [!IMPORTANT]
-> The components are weakly separated: the agent loop runs in the container being controlled by Claude, can only be used by one session at a time, and must be restarted or reset between sessions if necessary.
+**Key Capabilities:**
+- 🖥️ Full desktop automation with visual feedback
+- 🌐 Advanced web testing and data extraction
+- 📊 Built-in analytics monitoring (Google Analytics, Adobe Analytics)
+- 🔄 Task management with MongoDB persistence
+- 🛠️ Extensible tool system with custom integrations
+- 📱 Real-time streaming interface with Next.js
 
-## Quickstart: running the Docker container
+## Architecture
 
-### Anthropic API
+AutomagicIT is built as a multi-container system with clear separation of concerns:
 
-> [!TIP]
-> You can find your API key in the [Anthropic Console](https://console.anthropic.com/).
-
-```bash
-export ANTHROPIC_API_KEY=%your_api_key%
-docker run \
-    -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
-    -v $HOME/.anthropic:/home/computeragent/.anthropic \
-    -p 5900:5900 \
-    -p 8501:8501 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Next.js UI    │    │  FastAPI Server  │    │  Docker Desktop │
+│   Port 3001     │◄──►│   Port 8000      │◄──►│   Ubuntu 22.04  │
+│   Port 8080     │    │  Claude AI Loop  │    │   X11/VNC       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 ▼
+                    ┌─────────────────────┐
+                    │      MongoDB        │
+                    │  Task Management    │
+                    │   Port 27017       │
+                    └─────────────────────┘
 ```
 
-Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
+### Core Components
 
-### Bedrock
+- **Docker Container**: Ubuntu 22.04 with complete X11/VNC virtual desktop
+- **Python Backend**: FastAPI server with Claude integration and AI agent loop
+- **Next.js Frontend**: React-based UI with real-time streaming and visual feedback
+- **MongoDB Database**: Task storage, execution tracking, and result reporting
+- **Tool System**: Extensible automation tools with versioning support
 
-> [!TIP]
-> To use the new Claude 3.7 Sonnet on Bedrock, you first need to [request model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
+## Quick Start
 
-You'll need to pass in AWS credentials with appropriate permissions to use Claude on Bedrock.
-You have a few options for authenticating with Bedrock. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#environment-variables) for more details and options.
+### Prerequisites
 
-#### Option 1: (suggested) Use the host's AWS credentials file and AWS profile
+- Docker installed and running
+- At least 4GB RAM available
+- Anthropic API key ([Get one here](https://console.anthropic.com/))
 
-```bash
-export AWS_PROFILE=<your_aws_profile>
-docker run \
-    -e API_PROVIDER=bedrock \
-    -e AWS_PROFILE=$AWS_PROFILE \
-    -e AWS_REGION=us-west-2 \
-    -v $HOME/.aws:/home/computeragent/.aws \
-    -v $HOME/.anthropic:/home/computeragent/.anthropic \
-    -p 5900:5900 \
-    -p 8501:8501 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
-```
-
-Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
-
-#### Option 2: Use an access key and secret
+### Fast Start
 
 ```bash
-export AWS_ACCESS_KEY_ID=%your_aws_access_key%
-export AWS_SECRET_ACCESS_KEY=%your_aws_secret_access_key%
-export AWS_SESSION_TOKEN=%your_aws_session_token%
-docker run \
-    -e API_PROVIDER=bedrock \
-    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-    -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-    -e AWS_REGION=us-west-2 \
-    -v $HOME/.anthropic:/home/computeragent/.anthropic \
-    -p 5900:5900 \
-    -p 8501:8501 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
-```
+# Clone the repository
+git clone https://github.com/your-username/the-automator.git
+cd the-automator
 
-Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
+# Set your API key
+export ANTHROPIC_API_KEY=your_api_key_here
 
-### Vertex
-
-You'll need to pass in Google Cloud credentials with appropriate permissions to use Claude on Vertex.
-
-```bash
-docker build . -t computer-use-demo
-gcloud auth application-default login
-export VERTEX_REGION=%your_vertex_region%
-export VERTEX_PROJECT_ID=%your_vertex_project_id%
-docker run \
-    -e API_PROVIDER=vertex \
-    -e CLOUD_ML_REGION=$VERTEX_REGION \
-    -e ANTHROPIC_VERTEX_PROJECT_ID=$VERTEX_PROJECT_ID \
-    -v $HOME/.config/gcloud/application_default_credentials.json:/home/computeragent/.config/gcloud/application_default_credentials.json \
-    -p 5900:5900 \
-    -p 8501:8501 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -it computer-use-demo
-```
-
-Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
-
-This example shows how to use the Google Cloud Application Default Credentials to authenticate with Vertex.
-You can also set `GOOGLE_APPLICATION_CREDENTIALS` to use an arbitrary credential file, see the [Google Cloud Authentication documentation](https://cloud.google.com/docs/authentication/application-default-credentials#GAC) for more details.
-
-### Accessing the demo app
-
-Once the container is running, open your browser to [http://localhost:8080](http://localhost:8080) to access the combined interface that includes both the agent chat and desktop view.
-
-The container stores settings like the API key and custom system prompt in `~/.anthropic/`. Mount this directory to persist these settings between container runs.
-
-### Persistent User Data
-
-The container now supports persistent user data storage to maintain browser settings, application configurations, and user files between container restarts. This includes:
-
-- **Browser data**: Firefox profiles and settings (`.mozilla/`)
-- **Application configs**: GTK themes (`.config/gtk-3.0`, `.config/gtk-2.0`), LibreOffice settings (`.config/libreoffice`), audio settings (`.config/pulse`)
-- **Local application data**: User-specific app data (`.local/`)
-- **Cache files**: Application caches (`.cache/`)
-- **User directories**: Desktop, Documents, Downloads folders
-
-> **Note**: System configurations like the tint2 desktop panel are preserved and not overridden by persistent storage.
-
-To set up persistent user data:
-
-```bash
-# First time setup
-./setup_user_data.sh
-
-# Run container with persistent data
+# Build and run with persistent data
+./build.sh
 ./run.sh
 ```
 
-The persistent data is stored in the `user_data/` directory on the host system and automatically mounted into the container.
+Open your browser to [http://localhost:8080](http://localhost:8080) and start automating!
 
-Alternative access points:
+### Manual Setup
 
-- Streamlit interface only: [http://localhost:8501](http://localhost:8501)
-- Desktop view only: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
-- Direct VNC connection: `vnc://localhost:5900` (for VNC clients)
-
-## Screen size
-
-Environment variables `WIDTH` and `HEIGHT` can be used to set the screen size. For example:
+If you prefer manual control:
 
 ```bash
+# Build the Docker image
+docker build -t automagicit:latest .
+
+# Run with Anthropic API
 docker run \
     -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
     -v $HOME/.anthropic:/home/computeragent/.anthropic \
+    -v $(pwd)/user_data:/home/computeragent \
     -p 5900:5900 \
-    -p 8501:8501 \
+    -p 8000:8000 \
+    -p 3001:3001 \
     -p 6080:6080 \
     -p 8080:8080 \
-    -e WIDTH=1920 \
-    -e HEIGHT=1080 \
-    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+    -p 27017:27017 \
+    -it automagicit:latest
 ```
 
-We do not recommend sending screenshots in resolutions above [XGA/WXGA](https://en.wikipedia.org/wiki/Display_resolution_standards#XGA) to avoid issues related to [image resizing](https://docs.anthropic.com/en/docs/build-with-claude/vision#evaluate-image-size).
-Relying on the image resizing behavior in the API will result in lower model accuracy and slower performance than implementing scaling in your tools directly. The `computer` tool implementation in this project demonstrates how to scale both images and coordinates from higher resolutions to the suggested resolutions.
+## Features
 
-When implementing computer use yourself, we recommend using XGA resolution (1024x768):
+### 🤖 AI-Powered Automation
+- **Natural Language Processing**: Describe your automation needs in plain English
+- **Visual Context Understanding**: AI sees and interacts with your screen like a human
+- **Multi-Step Workflows**: Complex automation sequences with decision-making capabilities
+- **Error Recovery**: Intelligent error handling and retry mechanisms
 
-- For higher resolutions: Scale the image down to XGA and let the model interact with this scaled version, then map the coordinates back to the original resolution proportionally.
-- For lower resolutions or smaller devices (e.g. mobile devices): Add black padding around the display area until it reaches 1024x768.
+### 🛠️ Advanced Tool System
+- **Computer Control**: Full mouse, keyboard, and application control
+- **Web Automation**: Advanced browser interaction with Chrome DevTools integration
+- **JavaScript Execution**: Run custom JS code for complex DOM manipulation
+- **Network Monitoring**: Capture and analyze HTTP requests and responses
+- **Database Integration**: MongoDB reporting and data persistence
+- **Custom Tools**: Extensible architecture for adding new capabilities
+
+### 📊 Analytics & Monitoring
+- **Real-time Feedback**: Watch automation in real-time with screenshot streams
+- **Execution Logging**: Detailed logs of all tool executions and API calls
+- **Task Management**: Queue, schedule, and monitor automation tasks
+- **Performance Metrics**: Track execution times and success rates
+- **Error Reporting**: Comprehensive error tracking and debugging
+
+### 🎯 Use Cases
+
+**E-commerce Testing**
+```
+✓ Product catalog validation
+✓ Checkout flow testing  
+✓ Price monitoring
+✓ Inventory tracking
+✓ A/B test validation
+```
+
+**Quality Assurance**
+```
+✓ Regression testing
+✓ Cross-browser compatibility
+✓ Performance testing
+✓ Accessibility validation
+✓ Visual regression detection
+```
+
+**Data Extraction**
+```
+✓ Web scraping with context
+✓ API monitoring and testing
+✓ Analytics data capture
+✓ Competitive intelligence
+✓ Content migration
+```
+
+### Alternative API Providers
+
+#### AWS Bedrock
+
+```bash
+export AWS_PROFILE=your_aws_profile
+./run.sh --provider bedrock --region us-west-2
+```
+
+#### Google Vertex AI
+
+```bash
+export VERTEX_PROJECT_ID=your_project_id
+export VERTEX_REGION=us-central1
+./run.sh --provider vertex
+```
+
+## Interface Access
+
+Once running, AutomagicIT provides multiple access points:
+
+- **Main Interface**: [http://localhost:8080](http://localhost:8080) - Complete automation interface
+- **API Server**: [http://localhost:8000](http://localhost:8000) - Direct API access
+- **Frontend Dev**: [http://localhost:3001](http://localhost:3001) - Next.js development server
+- **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
+- **VNC Client**: `vnc://localhost:5900` - For external VNC clients
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key | Required |
+| `API_PROVIDER` | API provider (anthropic/bedrock/vertex) | anthropic |
+| `ANTHROPIC_MODEL` | Claude model to use | claude-sonnet-4-20250514 |
+| `MONGODB_URI` | MongoDB connection string | mongodb://localhost:27017 |
+| `WIDTH` | Desktop resolution width | 1024 |
+| `HEIGHT` | Desktop resolution height | 768 |
+
+### Task Mode
+
+Run AutomagicIT in dedicated task execution mode:
+
+```bash
+./run.sh --tasks
+```
+
+This mode optimizes for batch task processing with enhanced MongoDB integration.
 
 ## Development
 
+### Local Development Setup
+
 ```bash
-./setup.sh  # configure venv, install development dependencies, and install pre-commit hooks
-docker build . -t computer-use-demo:local  # manually build the docker image (optional)
-export ANTHROPIC_API_KEY=%your_api_key%
-docker run \
-    -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
-    -v $(pwd)/computer_using_agent:/home/computeragent/computer_using_agent/ `# mount local python module for development` \
-    -v $HOME/.anthropic:/home/computeragent/.anthropic \
-    -p 5900:5900 \
-    -p 8501:8501 \
-    -p 6080:6080 \
-    -p 8080:8080 \
-    -it computer-use-demo:local  # can also use ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+# Install dependencies
+pip install -r computer_using_agent/requirements.txt
+cd computer_using_agent/chat && npm install
+
+# Run components separately
+python -m computer_using_agent.api_service.main  # Backend (port 8000)
+cd computer_using_agent/chat && npm run dev       # Frontend (port 3001)
 ```
 
-The docker run command above mounts the repo inside the docker image, such that you can edit files from the host. Streamlit is already configured with auto reloading.
+### Adding Custom Tools
+
+1. Create your tool class in `computer_using_agent/tools/`
+2. Inherit from `BaseAnthropicTool`
+3. Implement required methods:
+   ```python
+   async def __call__(self, **kwargs) -> ToolResult:
+       # Tool implementation
+       pass
+   
+   def to_params(self) -> dict:
+       # Tool parameter definition
+       pass
+   ```
+4. Register in `computer_using_agent/tools/groups.py`
+
+### Testing
+
+```bash
+# Python tests
+pytest tests/
+
+# Frontend tests
+cd computer_using_agent/chat && npm test
+```
+
+## Performance Optimization
+
+- **Resolution**: Use 1024x768 for optimal AI performance
+- **Memory**: Minimum 4GB RAM, 8GB recommended for complex workflows
+- **Storage**: Persistent data in `user_data/` directory
+- **Logging**: Comprehensive logs in `/home/computeragent/logs/`
+
+## Troubleshooting
+
+### Common Issues
+
+**Docker Permission Errors**
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+**API Rate Limits**
+- Monitor usage in logs
+- Implement delays between requests
+- Use prompt caching for efficiency
+
+**Display Issues**
+- Check VNC connection on port 5900
+- Verify desktop resolution settings
+- Review X11 logs in container
+
+## Community & Support
+
+- 📄 [Documentation](CLAUDE.md)
+- 🤝 [Contributing](CONTRIBUTING.md)
+- 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
+- 🐛 [Issues](https://github.com/your-username/the-automator/issues)
+- 💬 [Discussions](https://github.com/your-username/the-automator/discussions)
+
+## Licensing
+
+This project is dual-licensed under a Small Business Source License and a separate commercial license.
+
+- **Free to use** for businesses with fewer than 50 employees and less than $250,000 USD annual revenue
+- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue)
+
+### License Files
+
+- `LICENSE` - Main license for small businesses and individuals
+- `LICENSE-COMMERCIAL.md` - Commercial licensing terms for enterprises
+- `LICENSE-MIT.md` - Original MIT license for code derived from Anthropic's project
+- `NOTICE.md` - Attribution statement for original source code
+
 # the-automator

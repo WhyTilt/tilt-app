@@ -108,7 +108,8 @@
       "Bash(npm run generate-sitemap:*)",
       "WebFetch(domain:localhost)",
       "Bash(groups)",
-      "Bash(who)"
+      "Bash(who)",
+      "WebFetch(domain:automagic-www-git-www-os-mike-the-automators-projects.vercel.app)"
     ],
     "deny": []
   }
