@@ -109,7 +109,11 @@
       "WebFetch(domain:localhost)",
       "Bash(groups)",
       "Bash(who)",
-      "WebFetch(domain:automagic-www-git-www-os-mike-the-automators-projects.vercel.app)"
+      "WebFetch(domain:automagic-www-git-www-os-mike-the-automators-projects.vercel.app)",
+      "Bash(git remote rename:*)",
+      "Bash(git remote add:*)",
+      "Bash(git remote:*)",
+      "Bash(git filter-branch:*)"
     ],
     "deny": []
   }
