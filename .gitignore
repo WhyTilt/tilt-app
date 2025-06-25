@@ -1,4 +1,5 @@
 .env*
+dev-vals.txt
 .venv
 .ruff_cache
 __pycache__
