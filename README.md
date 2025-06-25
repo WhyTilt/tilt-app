@@ -233,7 +233,6 @@ newgrp docker
 - 🌐 [Website](https://automagicit.com)
 - 📺 [YouTube](https://youtube.com/@automagicit)
 - 🐦 [X (Twitter)](https://x.com/_automagicit)
-- 📄 [Documentation](CLAUDE.md)
 - 🤝 [Contributing](CONTRIBUTING.md)
 - 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
 - 🐛 [Issues](https://github.com/AutomagicIT/the-automator/issues)
