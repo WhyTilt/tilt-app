@@ -106,7 +106,9 @@
       "Bash(do echo \"--- $file ---\")",
       "Bash(tail:*)",
       "Bash(npm run generate-sitemap:*)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(groups)",
+      "Bash(who)"
     ],
     "deny": []
   }

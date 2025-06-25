@@ -104,8 +104,10 @@ class ApiClient {
               const eventData = JSON.parse(message.slice(6));
               onEvent(eventData);
               
-              // If we receive 'done', break the loop
+              // If we receive 'done', add a small delay to ensure final screenshots are processed
               if (eventData.type === 'done') {
+                // Small delay to ensure final tool results are processed
+                await new Promise(resolve => setTimeout(resolve, 200));
                 return;
               }
             } catch (e) {
@@ -169,8 +171,10 @@ class ApiClient {
               const eventData = JSON.parse(message.slice(6));
               yield eventData;
               
-              // If we receive 'done', break the loop
+              // If we receive 'done', add a small delay to ensure final screenshots are processed
               if (eventData.type === 'done') {
+                // Small delay to ensure final tool results are processed
+                await new Promise(resolve => setTimeout(resolve, 200));
                 return;
               }
             } catch (e) {

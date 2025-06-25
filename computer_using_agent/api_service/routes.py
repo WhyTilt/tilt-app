@@ -114,6 +114,11 @@ async def chat_completion_stream(request: ChatRequest):
                         print(f"Input messages: {len(request.messages)}, Output messages: {len(result_messages)}")
                     else:
                         print(f"AI generated {len(result_messages) - len(request.messages)} new messages")
+                    
+                    # Add a small delay to ensure all tool results are processed by frontend
+                    print("Waiting briefly for frontend to process final tool results...")
+                    await asyncio.sleep(0.5)
+                    
                     # Signal completion
                     await message_queue.put(f"data: {json.dumps({'type': 'done', 'messages': [msg for msg in result_messages]})}\n\n")
                 except Exception as e:
