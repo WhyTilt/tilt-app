@@ -147,25 +147,6 @@ Open your browser to [http://localhost:3001](http://localhost:3001) and start au
 ✓ Content migration
 ```
 
-### Alternative API Providers
-
-#### AWS Bedrock
-
-```bash
-export AWS_PROFILE=your_aws_profile
-./run.sh --provider bedrock --region us-west-2
-```
-
-#### Google Vertex AI
-
-```bash
-export VERTEX_PROJECT_ID=your_project_id
-export VERTEX_REGION=us-central1
-./run.sh --provider vertex
-```
-
-#### Coming soon - Automagic 7b
-
 ## Interface Access
 
 Once running, AutomagicIT provides multiple access points:
