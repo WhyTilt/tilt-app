@@ -13,7 +13,7 @@ echo "Starting desktop environment..."
 
 # Start Xvfb first and wait for it to be ready
 echo "Starting Xvfb..." | tee -a "$LOGS_DIR/startup.log"
-./xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log"
+./xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log" &
 
 # Start window manager
 echo "Starting window manager..." | tee -a "$LOGS_DIR/startup.log"

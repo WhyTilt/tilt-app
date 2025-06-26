@@ -14,14 +14,14 @@ warnings.filterwarnings('ignore', module='pychrome')
 
 
 class NetworkInspectorTool(BaseAnthropicTool):
-    """Tool to monitor network requests in Chrome using pychrome library."""
+    """Tool to monitor network requests in Chromium using pychrome library."""
     
     name: str = "inspect_network"
     
     def to_params(self) -> BetaToolUnionParam:
         return {
             "name": self.name,
-            "description": "Monitor and inspect network requests in Chrome browser using pychrome library. Can start monitoring, capture requests with filters, and extract request bodies with specific JSON structure filtering.",
+            "description": "Monitor and inspect network requests in Chromium browser using pychrome library. Can start monitoring, capture requests with filters, and extract request bodies with specific JSON structure filtering.",
             "input_schema": {
                 "type": "object",
                 "properties": {
