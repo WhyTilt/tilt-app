@@ -48,7 +48,7 @@ interface TaskRunnerPanelProps {
 }
 
 export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTaskComplete, panelMode: externalPanelMode, onModeChange, onThought, onAction, onClearThoughts, onClearActions, onAgentStarting }: TaskRunnerPanelProps) {
-  const { config, messages, addMessage, setMessages, isLoading, setIsLoading, setJsInspectorResult, onJsInspectorUpdate } = useApp();
+  const { config, messages, addMessage, setMessages, isLoading, setIsLoading, setJsInspectorResult, onJsInspectorUpdate, setNetworkInspectorResult, onNetworkInspectorUpdate } = useApp();
   const { addThought, addAction, addScreenshot, resetStepTracking, clearAllData } = useTask();
   const [tasks, setTasks] = useState<Task[]>([]);
   const streamingMessageRef = useRef('');
@@ -674,8 +674,84 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
               }
             }
             
-            // Capture tool outputs for all tools (except js_inspector which is handled above)
-            if ((event.output || event.error) && event.tool_name !== 'js_inspector') {
+            // Handle inspect_network tool results
+            if (event.output && event.tool_name === 'inspect_network' && event.output.includes('Network monitoring')) {
+              try {
+                let networkResult;
+                
+                // Try to parse structured data from the output
+                if (event.output.includes('### STRUCTURED_DATA_START ###')) {
+                  const startMarker = '### STRUCTURED_DATA_START ###';
+                  const endMarker = '### STRUCTURED_DATA_END ###';
+                  const startIndex = event.output.indexOf(startMarker);
+                  const endIndex = event.output.indexOf(endMarker);
+                  
+                  if (startIndex !== -1 && endIndex !== -1) {
+                    const structuredDataStr = event.output.slice(
+                      startIndex + startMarker.length,
+                      endIndex
+                    ).trim();
+                    
+                    try {
+                      networkResult = JSON.parse(structuredDataStr);
+                    } catch {
+                      // Fall back to basic parsing
+                      networkResult = {
+                        requests: [],
+                        operation: 'Network monitoring',
+                        error: 'Failed to parse structured data'
+                      };
+                    }
+                  }
+                } else {
+                  // Basic parsing for non-structured output
+                  networkResult = {
+                    requests: [],
+                    operation: 'Network monitoring',
+                    rawOutput: event.output
+                  };
+                }
+                
+                const finalNetworkResult = {
+                  requests: networkResult.requests || [],
+                  operation: networkResult.operation || 'Network monitoring',
+                  timestamp: new Date().toISOString(),
+                  error: networkResult.error
+                };
+                
+                setNetworkInspectorResult(finalNetworkResult);
+                
+                // Track network monitoring in execution report
+                setCurrentExecutionReport(prev => ({
+                  ...prev,
+                  tool_outputs: [...(prev.tool_outputs || []), {
+                    tool: 'inspect_network',
+                    output: event.output,
+                    timestamp: new Date().toISOString()
+                  }]
+                }));
+                
+                if (onNetworkInspectorUpdate) {
+                  onNetworkInspectorUpdate();
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse inspect_network result:', parseError);
+                
+                setNetworkInspectorResult({
+                  requests: [],
+                  operation: 'Network monitoring',
+                  timestamp: new Date().toISOString(),
+                  error: (parseError as Error).message
+                });
+                
+                if (onNetworkInspectorUpdate) {
+                  onNetworkInspectorUpdate();
+                }
+              }
+            }
+            
+            // Capture tool outputs for all tools (except js_inspector and inspect_network which are handled above)
+            if ((event.output || event.error) && event.tool_name !== 'js_inspector' && event.tool_name !== 'inspect_network') {
               setCurrentExecutionReport(prev => ({
                 ...prev,
                 tool_outputs: [...(prev?.tool_outputs || []), {

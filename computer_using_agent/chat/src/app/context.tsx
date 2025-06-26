@@ -11,6 +11,13 @@ interface JsInspectorResult {
   error?: string;
 }
 
+interface NetworkInspectorResult {
+  requests: any[];
+  operation: string;
+  timestamp: string;
+  error?: string;
+}
+
 interface AppContextType {
   config: AppConfig;
   updateConfig: (updates: Partial<AppConfig>) => void;
@@ -23,6 +30,10 @@ interface AppContextType {
   setJsInspectorResult: (result: JsInspectorResult | null) => void;
   onJsInspectorUpdate?: () => void;
   setOnJsInspectorUpdate: (callback: (() => void) | undefined) => void;
+  networkInspectorResult: NetworkInspectorResult | null;
+  setNetworkInspectorResult: (result: NetworkInspectorResult | null) => void;
+  onNetworkInspectorUpdate?: () => void;
+  setOnNetworkInspectorUpdate: (callback: (() => void) | undefined) => void;
   viewMode: 'single' | 'dual';
   setViewMode: (mode: 'single' | 'dual') => void;
   isSettingsOpen: boolean;
@@ -55,6 +66,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [jsInspectorResult, setJsInspectorResult] = useState<JsInspectorResult | null>(null);
   const [onJsInspectorUpdate, setOnJsInspectorUpdate] = useState<(() => void) | undefined>(undefined);
+  const [networkInspectorResult, setNetworkInspectorResult] = useState<NetworkInspectorResult | null>(null);
+  const [onNetworkInspectorUpdate, setOnNetworkInspectorUpdate] = useState<(() => void) | undefined>(undefined);
   const [viewMode, setViewMode] = useState<'single' | 'dual'>('dual');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatPoppedOut, setIsChatPoppedOut] = useState(false);
@@ -82,6 +95,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setJsInspectorResult,
       onJsInspectorUpdate,
       setOnJsInspectorUpdate,
+      networkInspectorResult,
+      setNetworkInspectorResult,
+      onNetworkInspectorUpdate,
+      setOnNetworkInspectorUpdate,
       viewMode,
       setViewMode,
       isSettingsOpen,
