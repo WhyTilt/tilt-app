@@ -16,9 +16,10 @@ interface ThoughtOrActionMessage {
 
 interface ActionPanelProps {
   messages: ThoughtOrActionMessage[];
+  isFloating?: boolean;
 }
 
-export function ActionPanel({ messages }: ActionPanelProps) {
+export function ActionPanel({ messages, isFloating = false }: ActionPanelProps) {
   const messagesTopRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-scroll to top when new messages arrive
@@ -30,28 +31,36 @@ export function ActionPanel({ messages }: ActionPanelProps) {
   const actionMessages = messages.filter(msg => msg.type === 'action');
   const currentStepActions = actionMessages.slice(-1); // Show only the latest action
 
+  const content = (
+    <PanelBody>
+      {currentStepActions.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+          Agent actions will appear here...
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div ref={messagesTopRef} />
+          {currentStepActions.map((message) => (
+            <Action
+              key={message.id}
+              action={message.action || 'Action'}
+              details={message.details}
+              status={message.status}
+              timestamp={message.timestamp}
+            />
+          ))}
+        </div>
+      )}
+    </PanelBody>
+  );
+
+  if (isFloating) {
+    return content;
+  }
+
   return (
     <BottomPanel title="Actions">
-      <PanelBody>
-        {currentStepActions.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-            Agent actions will appear here...
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div ref={messagesTopRef} />
-            {currentStepActions.map((message) => (
-              <Action
-                key={message.id}
-                action={message.action || 'Action'}
-                details={message.details}
-                status={message.status}
-                timestamp={message.timestamp}
-              />
-            ))}
-          </div>
-        )}
-      </PanelBody>
+      {content}
     </BottomPanel>
   );
 }
