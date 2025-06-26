@@ -44,6 +44,8 @@ async def chat_completion_stream(request: ChatRequest):
             
             # Storage for tool results
             tool_state: Dict[str, ToolResult] = {}
+            # Track tool names by tool_id for frontend processing
+            tool_names: Dict[str, str] = {}
             
             # Use a queue to handle streaming
             message_queue = asyncio.Queue()
@@ -59,6 +61,8 @@ async def chat_completion_stream(request: ChatRequest):
                         }
                         message_queue.put_nowait(f"data: {json.dumps(event_data)}\n\n")
                     elif content.get("type") == "tool_use":
+                        # Track tool name for later use in tool_result callback
+                        tool_names[content["id"]] = content["name"]
                         event_data = {
                             "type": "tool_use",
                             "tool_name": content["name"],
@@ -72,6 +76,7 @@ async def chat_completion_stream(request: ChatRequest):
                 event_data = {
                     "type": "tool_result",
                     "tool_id": tool_id,
+                    "tool_name": tool_names.get(tool_id, "unknown"),  # Include tool name
                     "output": tool_output.output,
                     "error": tool_output.error,
                     "base64_image": tool_output.base64_image
