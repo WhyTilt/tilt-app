@@ -74,7 +74,7 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
       
       setPosition({
         x: e.clientX - dragOffset.x,
-        y: position.y, // Keep Y position fixed for bottom anchoring
+        y: e.clientY - dragOffset.y,
       });
     };
 
@@ -99,15 +99,15 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
       ? {
           position: 'fixed' as const,
           left: position.x,
-          bottom: 0,
-          top: 0,
+          top: position.y,
           width: size.width,
+          height: '80vh', // Expand height to 80% of viewport
           zIndex: 50,
         }
       : {
           position: 'fixed' as const,
           left: position.x,
-          bottom: 20, // Anchor to bottom with 20px margin
+          top: position.y,
           width: size.width,
           height: size.height,
           zIndex: 40,

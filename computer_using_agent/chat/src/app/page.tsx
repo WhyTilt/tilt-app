@@ -412,7 +412,7 @@ export default function Home() {
             title="Open Inspector Panel"
           >
             <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </button>
 
@@ -435,7 +435,7 @@ export default function Home() {
               title="Open Task Runner"
             >
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
               </svg>
             </button>
           )}
@@ -571,7 +571,7 @@ export default function Home() {
       {/* Floating Panels */}
       <FloatingPanel
         title="Thinking"
-        defaultPosition={{ x: 20, y: 0 }}
+        defaultPosition={{ x: 20, y: 100 }}
         defaultSize={{ width: 400, height: 300 }}
         defaultVisible={showThinkingPanel}
       >
@@ -582,7 +582,7 @@ export default function Home() {
 
       <FloatingPanel
         title="Actions"
-        defaultPosition={{ x: 440, y: 0 }}
+        defaultPosition={{ x: 440, y: 100 }}
         defaultSize={{ width: 400, height: 300 }}
         defaultVisible={showActionsPanel}
       >
@@ -593,12 +593,12 @@ export default function Home() {
 
       <FloatingPanel
         title="Inspector"
-        defaultPosition={{ x: 860, y: 0 }}
+        defaultPosition={{ x: 860, y: 100 }}
         defaultSize={{ width: 500, height: 400 }}
         defaultVisible={showInspectorPanel}
       >
         <div className="h-full">
-          <InspectorPanel />
+          <InspectorPanel isFloating={true} />
         </div>
       </FloatingPanel>
 
