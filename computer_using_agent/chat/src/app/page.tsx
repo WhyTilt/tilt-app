@@ -402,7 +402,7 @@ export default function Home() {
       {/* Bottom Panels - Fixed to bottom 22% */}
       <div className="fixed bottom-0 left-0 right-0 h-[22vh] z-30">
         <div className="flex w-full h-full gap-[6px]">
-          {messages.length === 0 && taskState === 'idle' && !currentRunningTask ? (
+          {messages.length === 0 && taskState === 'idle' && !currentRunningTask && thoughts.length === 0 && actions.length === 0 ? (
             // Initial state: Only show Instructions panel
             <div style={{ width: '100%', height: '100%' }}>
               <InstructionPanel

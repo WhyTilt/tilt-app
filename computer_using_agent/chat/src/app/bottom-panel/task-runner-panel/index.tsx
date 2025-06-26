@@ -120,9 +120,8 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
     try {
       console.log('Cleaning up between tasks...');
       
-      // Clear task execution data (thoughts, actions, step tracking)
-      resetStepTracking();
-      clearAllData();
+      // Only cleanup browser state, preserve UI state for inspection
+      // UI state will be cleared when the next task starts
       
       // Call API to cleanup Firefox browser and reset VNC
       const response = await fetch(`${API_BASE_URL}/cleanup-browser`, {
@@ -238,6 +237,14 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
     let hasStreamErrors = false;
     let hasToolErrors = false;
     
+    // Clear UI state from previous task (thoughts, actions, step tracking, inspector data)
+    resetStepTracking();
+    clearAllData();
+    
+    // Clear inspector panel data from previous task
+    setJsInspectorResult(null);
+    setNetworkInspectorResult(null);
+    
     // Reset execution report for new task
     setCurrentExecutionReport({
       actions_taken: [],
@@ -245,9 +252,6 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       tool_outputs: [],
       final_result: null
     });
-    
-    // Reset step-by-step execution tracking  
-    resetStepTracking();
     
     // Clear messages to avoid tool role messages from previous tasks
     setMessages([]);
