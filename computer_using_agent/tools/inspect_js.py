@@ -13,14 +13,14 @@ warnings.filterwarnings('ignore', module='pychrome')
 
 
 class JavaScriptInspectorTool(BaseAnthropicTool):
-    """Tool to execute JavaScript code in Chrome using pychrome library."""
+    """Tool to execute JavaScript code in Chromium using pychrome library."""
     
     name: str = "inspect_js"
     
     def to_params(self) -> BetaToolUnionParam:
         return {
             "name": self.name,
-            "description": "Execute JavaScript code in the current Chrome browser tab to inspect page elements, extract data, or interact with web APIs. Use this when you need to access browser-specific data like window objects, DOM elements, or execute JavaScript that returns values from the page. Chrome must be running with remote debugging enabled on port 9222.",
+            "description": "Execute JavaScript code in the current Chromium browser tab to inspect page elements, extract data, or interact with web APIs. Use this when you need to access browser-specific data like window objects, DOM elements, or execute JavaScript that returns values from the page. Chromium must be running with remote debugging enabled on port 9222.",
             "input_schema": {
                 "type": "object",
                 "properties": {
