@@ -60,8 +60,6 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
     }));
 
     const handleMouseDown = (e: React.MouseEvent) => {
-      if (isMaximized) return;
-      
       setIsDragging(true);
       setDragOffset({
         x: e.clientX - position.x,
@@ -70,7 +68,7 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || isMaximized) return;
+      if (!isDragging) return;
       
       setPosition({
         x: e.clientX - dragOffset.x,
@@ -99,9 +97,9 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
       ? {
           position: 'fixed' as const,
           left: position.x,
-          top: position.y,
+          top: 60, // Expand to near top (leaving space for title bar)
+          bottom: 20, // Expand to near bottom  
           width: size.width,
-          height: '80vh', // Expand height to 80% of viewport
           zIndex: 50,
         }
       : {
@@ -120,7 +118,7 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
       >
         {/* Header */}
         <div 
-          className={`flex items-center justify-between px-4 py-2 bg-zinc-800 rounded-t-lg border-b border-zinc-600 ${!isMaximized ? 'cursor-move' : ''}`}
+          className="flex items-center justify-between px-4 py-2 bg-zinc-800 rounded-t-lg border-b border-zinc-600 cursor-move"
           onMouseDown={handleMouseDown}
         >
           <div className="text-white text-sm font-medium">{title}</div>
