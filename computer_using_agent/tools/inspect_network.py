@@ -21,35 +21,21 @@ class NetworkInspectorTool(BaseAnthropicTool):
     def to_params(self) -> BetaToolUnionParam:
         return {
             "name": self.name,
-            "description": "Monitor and inspect network requests in Chrome browser using pychrome library. Can start monitoring, capture requests with filters, and extract request bodies with specific JSON structure filtering.",
+            "description": "Capture network requests from a website. Automatically starts monitoring when you visit a site and shows you the requests.",
             "input_schema": {
                 "type": "object",
                 "properties": {
-                    "action": {
-                        "type": "string",
-                        "enum": ["start", "monitor_start", "stop", "get_requests", "clear"],
-                        "description": "Action to perform: start monitoring (blocking), monitor_start (non-blocking), stop monitoring, get captured requests, or clear requests"
-                    },
-                    "duration": {
-                        "type": "number",
-                        "description": "For 'start' action: duration in seconds to monitor (default: 30)",
-                        "default": 30
-                    },
                     "url_filter": {
                         "type": "string",
-                        "description": "Optional URL pattern to filter requests (regex supported)"
-                    },
-                    "method_filter": {
-                        "type": "string",
-                        "description": "Optional HTTP method to filter (GET, POST, etc.)"
+                        "description": "Only show requests containing this text (e.g. 'analytics', 'track', 'api')"
                     },
                     "filter_keys": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Optional JSON key paths to filter from request body (e.g., ['events.0.xdm._experience.analytics'])"
+                        "description": "Show only specific data from request body (e.g. ['events.analytics', 'user.id'])"
                     }
                 },
-                "required": ["action"]
+                "required": []
             }
         }
     
@@ -151,9 +137,11 @@ class NetworkInspectorTool(BaseAnthropicTool):
     
     def _get_requests(self) -> Dict[str, Any]:
         """Get all captured network requests."""
+        import datetime
         return {
             "output": f"Retrieved {len(self._captured_requests)} captured requests",
-            "requests": self._captured_requests
+            "requests": self._captured_requests,
+            "timestamp": datetime.datetime.now().isoformat()
         }
     
     def _clear_requests(self) -> Dict[str, Any]:
@@ -180,107 +168,113 @@ class NetworkInspectorTool(BaseAnthropicTool):
         return {"output": "Network monitoring stopped"}
     
     async def __call__(self, **kwargs) -> ToolResult:
-        action = kwargs.get("action", "")
-        
-        if not action:
-            return ToolResult(error="Action parameter is required")
-        
+        """Simple interface: just capture and return network requests with optional filters."""
         try:
-            if action == "start":
-                duration = kwargs.get("duration", 30)
-                url_filter = kwargs.get("url_filter")
-                method_filter = kwargs.get("method_filter")
-                
-                result = self._monitor_network_requests(duration, url_filter, method_filter)
-                
-            elif action == "monitor_start":
-                url_filter = kwargs.get("url_filter")
-                method_filter = kwargs.get("method_filter")
-                
-                result = self._start_monitoring(url_filter, method_filter)
-                
-            elif action == "stop":
-                result = self._stop_monitoring()
-                
-            elif action == "get_requests":
-                result = self._get_requests()
-                
-            elif action == "clear":
-                result = self._clear_requests()
-                
-            else:
-                return ToolResult(error=f"Unknown action: {action}")
+            url_filter = kwargs.get("url_filter")
+            filter_keys = kwargs.get("filter_keys", [])
             
+            # If monitoring isn't running, start it
+            if not self._monitoring:
+                start_result = self._start_monitoring(url_filter, None)
+                if "error" in start_result:
+                    return ToolResult(error=start_result["error"])
+                
+                # Wait a moment for requests to be captured
+                import asyncio
+                await asyncio.sleep(2)
+            
+            # Get all captured requests
+            result = self._get_requests()
             if "error" in result:
                 return ToolResult(error=result["error"])
             
-            # Get filter keys for JSON filtering
-            filter_keys = kwargs.get("filter_keys", [])
-            
-            # Format output for requests  
-            output = result["output"]
+            # Find the LAST request matching the filter
+            matching_requests = []
             if "requests" in result and result["requests"]:
-                output += "\n\nCaptured Requests:\n"
-                for i, req in enumerate(result["requests"], 1):
-                    output += f"{i}. [{req['method']}] {req['url']}\n"
-                    if req.get('postData'):
-                        body_data = req['postData']
-                        
-                        # If filter keys provided, extract specific data
-                        if filter_keys:
-                            try:
-                                import json as json_module
-                                parsed_body = json_module.loads(body_data)
-                                filtered_data = {}
-                                
-                                for key_path in filter_keys:
-                                    keys = key_path.split('.')
-                                    current = parsed_body
-                                    
-                                    # Navigate to the key path
-                                    for key in keys:
-                                        if key.isdigit():
-                                            current = current[int(key)]
-                                        else:
-                                            current = current.get(key, {})
-                                    
-                                    filtered_data[key_path] = current
-                                
-                                output += f"   Filtered Data: {json_module.dumps(filtered_data, indent=2)}\n"
-                            except Exception as e:
-                                output += f"   Error filtering data: {str(e)}\n"
-                        else:
-                            # Show full body if no filters
-                            output += f"   Full Body: {body_data}\n"
-            
-            
-            # If we have filtered data, add it as structured JSON to the output for the agent
-            if "requests" in result and result["requests"] and filter_keys:
                 for req in result["requests"]:
-                    if req.get('postData'):
-                        try:
-                            import json as json_module
-                            parsed_body = json_module.loads(req['postData'])
-                            filtered_data = {}
-                            
-                            for key_path in filter_keys:
-                                keys = key_path.split('.')
-                                current = parsed_body
-                                
-                                # Navigate to the key path
-                                for key in keys:
-                                    if key.isdigit():
-                                        current = current[int(key)]
-                                    else:
-                                        current = current.get(key, {})
-                                
-                                filtered_data[key_path] = current
-                            
-                            # Add structured data as JSON at the end of output for programmatic access
-                            output += f"\n\n### STRUCTURED_DATA_START ###\n{json_module.dumps(filtered_data, indent=2)}\n### STRUCTURED_DATA_END ###\n"
-                            break
-                        except Exception:
-                            pass
+                    # Apply URL filter if provided
+                    if url_filter and url_filter.lower() not in req.get('url', '').lower():
+                        continue
+                    matching_requests.append(req)
+            
+            if not matching_requests:
+                return ToolResult(output=f"No network requests found matching filter: {url_filter or 'any'}")
+            
+            # Get the LAST (most recent) matching request
+            last_request = matching_requests[-1]
+            
+            # Format output for the last matching request
+            output = f"Found {len(matching_requests)} matching requests. Showing the most recent:\n\n"
+            output += f"[{last_request['method']}] {last_request['url']}\n"
+            
+            # Extract filtered data if filter_keys provided
+            filtered_data = None
+            if filter_keys and last_request.get('postData'):
+                try:
+                    import json as json_module
+                    parsed_body = json_module.loads(last_request['postData'])
+                    filtered_data = {}
+                    
+                    for key_path in filter_keys:
+                        keys = key_path.split('.')
+                        current = parsed_body
+                        
+                        # Navigate to the key path
+                        for key in keys:
+                            if current is None:
+                                break
+                            if isinstance(current, list):
+                                if key.isdigit():
+                                    idx = int(key)
+                                    current = current[idx] if idx < len(current) else None
+                                else:
+                                    # For lists, look in first item if it's a dict
+                                    current = current[0].get(key, {}) if current and isinstance(current[0], dict) else None
+                            elif isinstance(current, dict):
+                                current = current.get(key, {})
+                            else:
+                                current = None
+                                break
+                        
+                        filtered_data[key_path] = current
+                    
+                    output += f"\nFiltered Data:\n{json_module.dumps(filtered_data, indent=2)}\n"
+                except Exception as e:
+                    output += f"\nError extracting filtered data: {str(e)}\n"
+                    filtered_data = None
+            elif last_request.get('postData'):
+                # Show full body if no filter keys
+                output += f"\nRequest Body:\n{last_request['postData']}\n"
+            
+            # Create a copy of the request for frontend with filtered data only
+            import json as json_module
+            frontend_request = {
+                "requestId": last_request.get("requestId", ""),
+                "url": last_request.get("url", ""),
+                "method": last_request.get("method", ""),
+                "headers": last_request.get("headers", {}),
+                "timestamp": last_request.get("timestamp", "")
+            }
+            
+            # Only include filtered data in postData, not the full request body
+            if filtered_data:
+                frontend_request["postData"] = json_module.dumps(filtered_data, indent=2)
+            elif last_request.get('postData') and not filter_keys:
+                # Only include full body if no filtering was requested
+                frontend_request["postData"] = last_request['postData']
+            
+            # Add structured data for frontend inspector panel
+            frontend_data = {
+                "requests": [frontend_request],  # Only the filtered request data
+                "operation": "capture",
+                "timestamp": result.get("timestamp", ""),
+                "url_filter": url_filter,
+                "filter_keys": filter_keys,
+                "total_matching": len(matching_requests)
+            }
+            
+            # Add structured data markers for frontend parsing
+            output += f"\n\n<inspector>\n{json_module.dumps(frontend_data, indent=2)}\n</inspector>\n"
             
             return ToolResult(output=output)
             
