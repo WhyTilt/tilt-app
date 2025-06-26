@@ -77,12 +77,10 @@ RUN usermod -aG sudo mongodb && \
 # Stage 3: User applications layer
 FROM system-packages AS user-apps
 
-RUN add-apt-repository ppa:mozillateam/ppa && \
-    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
+# Install Chromium (available for both AMD64 and ARM64)
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    google-chrome-stable \
+    chromium-browser \
     x11-apps \
     xpdf \
     tint2 \
