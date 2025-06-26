@@ -318,7 +318,7 @@ export default function Home() {
         {showVncPanel ? (
           <VncPanel />
         ) : (
-          (taskState !== 'idle' || isAgentStarting) && (
+          (taskState !== 'idle' || isAgentStarting || screenshots.length > 0) && (
             <ScreenshotsPanel
               screenshots={screenshots}
               selectedIndex={currentScreenshotIndex || 0}

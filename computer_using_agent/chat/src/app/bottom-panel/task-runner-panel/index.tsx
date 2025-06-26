@@ -123,7 +123,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       // Only cleanup browser state, preserve UI state for inspection
       // UI state will be cleared when the next task starts
       
-      // Call API to cleanup Firefox browser and reset VNC
+      // Call API to cleanup browser and reset VNC
       const response = await fetch(`${API_BASE_URL}/cleanup-browser`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }

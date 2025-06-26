@@ -535,25 +535,9 @@ async def cleanup_browser():
         
         cleanup_results = []
         
-        # Kill all Firefox processes
-        try:
-            result = subprocess.run(
-                ["pkill", "-f", "firefox"], 
-                capture_output=True, 
-                text=True,
-                timeout=10
-            )
-            if result.returncode == 0:
-                cleanup_results.append("Firefox processes terminated")
-            else:
-                cleanup_results.append("No Firefox processes found")
-        except subprocess.TimeoutExpired:
-            cleanup_results.append("Firefox cleanup timed out")
-        except Exception as e:
-            cleanup_results.append(f"Firefox cleanup error: {str(e)}")
-        
+       
         # Kill any remaining browser-related processes
-        browsers = ["chrome", "chromium", "firefox-esr"]
+        browsers = ["chrome", "chromium"]
         for browser in browsers:
             try:
                 result = subprocess.run(
@@ -570,8 +554,6 @@ async def cleanup_browser():
         # Clear browser temp files and cache
         temp_paths = [
             "/tmp/.mozilla",
-            "/tmp/firefox*",
-            "/home/computeragent/.mozilla/firefox/*/Cache*",
             "/home/computeragent/.cache/mozilla"
         ]
         
@@ -590,7 +572,7 @@ async def cleanup_browser():
         # Wait for processes to fully terminate
         time.sleep(2)
         
-        # Reset VNC display and start fresh Firefox session
+        # Reset VNC display and start fresh chrome session
         try:
             # Kill any existing VNC viewers that might be hanging
             subprocess.run(
@@ -600,14 +582,8 @@ async def cleanup_browser():
             )
             cleanup_results.append("VNC viewers cleared")
             
-            # Start fresh Firefox session
-            subprocess.Popen(
-                ["sh", "-c", "DISPLAY=:1 firefox-esr &"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
-            )
-            time.sleep(5)  # Wait longer for Firefox to fully start
-            cleanup_results.append("Fresh Firefox session started")
+            
+            time.sleep(5)  
             
             # Take a screenshot to ensure VNC is responsive
             try:
@@ -621,7 +597,7 @@ async def cleanup_browser():
                 cleanup_results.append("VNC display verification failed")
                 
         except Exception as e:
-            cleanup_results.append(f"Failed to start Firefox: {str(e)}")
+            cleanup_results.append(f"Failed to start vnc: {str(e)}")
         
         return {
             "success": True, 
