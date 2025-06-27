@@ -16,9 +16,10 @@ interface ThoughtOrActionMessage {
 
 interface ThinkingPanelProps {
   messages: ThoughtOrActionMessage[];
+  isFloating?: boolean;
 }
 
-export function ThinkingPanel({ messages }: ThinkingPanelProps) {
+export function ThinkingPanel({ messages, isFloating = false }: ThinkingPanelProps) {
   const messagesTopRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-scroll to top when new messages arrive
@@ -30,26 +31,34 @@ export function ThinkingPanel({ messages }: ThinkingPanelProps) {
   const thoughtMessages = messages.filter(msg => msg.type === 'thought');
   const currentStepThoughts = thoughtMessages.slice(-1); // Show only the latest thought
 
+  const content = (
+    <PanelBody>
+      {currentStepThoughts.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+          Agent thoughts will appear here...
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div ref={messagesTopRef} />
+          {currentStepThoughts.map((message) => (
+            <Thought
+              key={message.id}
+              content={message.content}
+              timestamp={message.timestamp}
+            />
+          ))}
+        </div>
+      )}
+    </PanelBody>
+  );
+
+  if (isFloating) {
+    return content;
+  }
+
   return (
     <BottomPanel title="Thoughts">
-      <PanelBody>
-        {currentStepThoughts.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-            Agent thoughts will appear here...
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div ref={messagesTopRef} />
-            {currentStepThoughts.map((message) => (
-              <Thought
-                key={message.id}
-                content={message.content}
-                timestamp={message.timestamp}
-              />
-            ))}
-          </div>
-        )}
-      </PanelBody>
+      {content}
     </BottomPanel>
   );
 }

@@ -7,12 +7,11 @@ import { useTaskRunner, Task } from '@/app/task-runner/context';
 import { ScreenshotsPanel } from '@/app/screenshots/panel';
 import { VncPanel } from '@/app/screenshots/vnc/panel';
 import {
-  BottomPanelContainer,
-  InstructionPanel,
   ThinkingPanel,
   ActionPanel,
   InspectorPanel
 } from './bottom-panel';
+import { FloatingPanel } from './bottom-panel/floating-panel';
 import { LogPanel } from './bottom-panel/log-panel';
 import { TaskRunnerPanel } from './bottom-panel/task-runner-panel';
 import { TaskExecutionReportModal } from './modals/task-execution-report';
@@ -61,6 +60,11 @@ export default function Home() {
   const [taskRunnerMode, setTaskRunnerMode] = useState<'minimized' | 'default' | 'maximized'>('maximized');
   const [showLogPanel, setShowLogPanel] = useState(false);
   const [isAgentStarting, setIsAgentStarting] = useState(false);
+  
+  // Floating panel states
+  const [showThinkingPanel, setShowThinkingPanel] = useState(false);
+  const [showActionsPanel, setShowActionsPanel] = useState(false);
+  const [showInspectorPanel, setShowInspectorPanel] = useState(false);
 
 
   // Handle initial loading - only on page load
@@ -313,12 +317,12 @@ export default function Home() {
       </div>
 
 
-      {/* Screenshots/VNC Panel - Top area minus fixed bottom panels */}
-      <div className="h-full pb-[22vh] relative">
+      {/* Screenshots/VNC Panel - Full viewport height */}
+      <div className="h-full relative">
         {showVncPanel ? (
           <VncPanel />
         ) : (
-          (taskState !== 'idle' || isAgentStarting) && (
+          (taskState !== 'idle' || isAgentStarting || screenshots.length > 0) && (
             <ScreenshotsPanel
               screenshots={screenshots}
               selectedIndex={currentScreenshotIndex || 0}
@@ -330,8 +334,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Control Panel - Floating above bottom panels */}
-      <div className="fixed bottom-[22vh] left-1/2 transform -translate-x-1/2 z-40 mb-4">
+      {/* Control Panel - Floating at bottom */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40">
         <div className="flex items-center space-x-1 bg-zinc-800/90 backdrop-blur-sm rounded-lg p-2 border border-zinc-600">
           {/* Screenshot/VNC Mode Controls */}
           {(taskState !== 'idle' || screenshots.length > 0) && (
@@ -373,6 +377,45 @@ export default function Home() {
           )}
 
 
+          {/* Panel Controls */}
+          
+          {/* Thinking Panel Button */}
+          <button
+            onClick={() => setShowThinkingPanel(true)}
+            className={`p-2 bg-transparent border border-zinc-600 hover:bg-zinc-700 rounded-lg transition-colors ${
+              thoughts.length === 0 && taskState === 'idle' ? 'opacity-50' : ''
+            }`}
+            title="Open Thinking Panel"
+          >
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </button>
+
+          {/* Actions Panel Button */}
+          <button
+            onClick={() => setShowActionsPanel(true)}
+            className={`p-2 bg-transparent border border-zinc-600 hover:bg-zinc-700 rounded-lg transition-colors ${
+              actions.length === 0 && taskState === 'idle' ? 'opacity-50' : ''
+            }`}
+            title="Open Actions Panel"
+          >
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </button>
+
+          {/* Inspector Panel Button */}
+          <button
+            onClick={() => setShowInspectorPanel(true)}
+            className="p-2 bg-transparent border border-zinc-600 hover:bg-zinc-700 rounded-lg transition-colors"
+            title="Open Inspector Panel"
+          >
+            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+
           {/* Log Panel Button */}
           <button
             onClick={() => setShowLogPanel(true)}
@@ -392,56 +435,9 @@ export default function Home() {
               title="Open Task Runner"
             >
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
               </svg>
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Panels - Fixed to bottom 22% */}
-      <div className="fixed bottom-0 left-0 right-0 h-[22vh] z-30">
-        <div className="flex w-full h-full gap-[6px]">
-          {messages.length === 0 && taskState === 'idle' && !currentRunningTask ? (
-            // Initial state: Only show Instructions panel
-            <div style={{ width: '100%', height: '100%' }}>
-              <InstructionPanel
-                onScreenshotAdded={addScreenshot}
-                onSubmit={handleChatSubmit}
-                inputOnly={true}
-                isInitialLoading={isInitialLoading}
-                initialPrompt={undefined}
-                taskId={undefined}
-              />
-            </div>
-          ) : currentRunningTask || taskState === 'running' ? (
-            // When tasks are running: Only show Thinking (2/3) and Actions (1/3)
-            <>
-              <div style={{ width: '66.666%', height: '100%' }}>
-                <ThinkingPanel
-                  messages={thoughts}
-                />
-              </div>
-
-              <div style={{ width: '33.333%', height: '100%' }}>
-                <ActionPanel
-                  messages={actions}
-                />
-              </div>
-            </>
-          ) : (
-            // Agent is working but not running tasks: Show Thinking, Actions, and Inspector (no Instructions)
-            <BottomPanelContainer tasksMode={false}>
-              <ThinkingPanel
-                messages={thoughts}
-              />
-
-              <ActionPanel
-                messages={actions}
-              />
-
-              <InspectorPanel />
-            </BottomPanelContainer>
           )}
         </div>
       </div>
@@ -542,6 +538,69 @@ export default function Home() {
           setCompletedTask(null);
         }}
       />
+
+      {/* Initial Instruction Panel - Show when idle with no data */}
+      {messages.length === 0 && taskState === 'idle' && !currentRunningTask && thoughts.length === 0 && actions.length === 0 && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 w-96 z-40">
+          <TaskRunnerPanel
+            onScreenshotAdded={addScreenshot}
+            onSubmit={handleChatSubmit}
+            panelMode="default"
+            onModeChange={() => {}}
+            onTaskStart={(task) => {
+              setCurrentRunningTask(task);
+              setTaskState('running');
+            }}
+            onTaskComplete={(task) => {
+              setCurrentRunningTask(null);
+              setTaskState('idle');
+              if (task) {
+                setCompletedTask(task);
+                setShowTaskReport(true);
+              }
+            }}
+            onThought={() => {}}
+            onAction={() => {}}
+            onClearThoughts={() => {}}
+            onClearActions={() => {}}
+            onAgentStarting={setIsAgentStarting}
+          />
+        </div>
+      )}
+
+      {/* Floating Panels */}
+      <FloatingPanel
+        title="Thinking"
+        defaultPosition={{ x: 20, y: 100 }}
+        defaultSize={{ width: 400, height: 300 }}
+        defaultVisible={showThinkingPanel}
+      >
+        <div className="p-4 h-full overflow-auto">
+          <ThinkingPanel isFloating={true} messages={thoughts.map(t => ({ ...t, type: 'thought' as const }))} />
+        </div>
+      </FloatingPanel>
+
+      <FloatingPanel
+        title="Actions"
+        defaultPosition={{ x: 440, y: 100 }}
+        defaultSize={{ width: 400, height: 300 }}
+        defaultVisible={showActionsPanel}
+      >
+        <div className="p-4 h-full overflow-auto">
+          <ActionPanel isFloating={true} messages={actions.map(a => ({ ...a, type: 'action' as const, content: a.content || a.details || '' }))} />
+        </div>
+      </FloatingPanel>
+
+      <FloatingPanel
+        title="Inspector"
+        defaultPosition={{ x: 860, y: 100 }}
+        defaultSize={{ width: 500, height: 400 }}
+        defaultVisible={showInspectorPanel}
+      >
+        <div className="h-full">
+          <InspectorPanel isFloating={true} />
+        </div>
+      </FloatingPanel>
 
     </div>
   );

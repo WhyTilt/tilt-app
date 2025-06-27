@@ -6,12 +6,12 @@ __pycache__
 .pytest_cache
 
 # Next.js build artifacts
-computer_using_agent/chat/.next/
-computer_using_agent/chat/out/
-computer_using_agent/chat/build/
+agent/chat/.next/
+agent/chat/out/
+agent/chat/build/
 
 # Node.js dependencies
-computer_using_agent/chat/node_modules/
+agent/chat/node_modules/
 node_modules/
 
 # Logs
@@ -21,4 +21,12 @@ logs/
 # Persistent user data (keep directory structure but ignore contents)
 user_data/*
 !user_data/.gitkeep
-computer_using_agent/chat/node_modules/
+
+# MongoDB database files (should not be in repository)
+db_data/
+**/db_data/
+
+# Next.js build artifacts and cache (should not be in repository)
+.next/
+**/.next/
+nextjs/.next/
