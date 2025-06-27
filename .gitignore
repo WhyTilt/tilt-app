@@ -19,8 +19,7 @@ logs/
 *.log
 
 # Persistent user data (keep directory structure but ignore contents)
-user_data/*
-!user_data/.gitkeep
+user_data/
 
 # MongoDB database files (should not be in repository)
 db_data/
