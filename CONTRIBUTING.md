@@ -58,11 +58,11 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ```bash
 # Backend development
-pip install -r computer_using_agent/requirements.txt
-python -m computer_using_agent.api_service.main
+pip install -r agent/requirements.txt
+python -m agent.api_service.main
 
 # Frontend development
-cd computer_using_agent/chat
+cd nextjs
 npm install
 npm run dev
 ```
@@ -183,7 +183,7 @@ class MyCustomTool(BaseAnthropicTool):
 pytest tests/ -v
 
 # Frontend tests
-cd computer_using_agent/chat
+cd nextjs
 npm test
 
 # Integration tests with Docker

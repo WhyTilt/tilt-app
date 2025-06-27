@@ -70,6 +70,9 @@ RUN mkdir -p /data/db /var/log/mongodb && \
     chown -R mongodb:mongodb /data/db /var/log/mongodb && \
     chmod 755 /data/db /var/log/mongodb
 
+# Create volume for persistent MongoDB data
+VOLUME ["/data/db"]
+
 # Add mongodb user to sudo group for container startup
 RUN usermod -aG sudo mongodb && \
     echo "mongodb ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -145,15 +148,15 @@ RUN python -m pip install --upgrade pip==23.1.2 setuptools==58.0.4 wheel==0.40.0
 FROM pip-setup AS python-deps
 
 # only reinstall if requirements.txt changes
-COPY --chown=$USERNAME:$USERNAME computer_using_agent/requirements.txt $HOME/computer_using_agent/requirements.txt
-RUN python -m pip install -r $HOME/computer_using_agent/requirements.txt
+COPY --chown=$USERNAME:$USERNAME agent/requirements.txt $HOME/agent/requirements.txt
+RUN python -m pip install -r $HOME/agent/requirements.txt
 
 # Stage 8: Node.js dependencies layer
 FROM python-deps AS nodejs-deps
 
 # Install Next.js dependencies
-COPY --chown=$USERNAME:$USERNAME computer_using_agent/chat/package*.json $HOME/computer_using_agent/chat/
-WORKDIR $HOME/computer_using_agent/chat
+COPY --chown=$USERNAME:$USERNAME nextjs/package*.json $HOME/nextjs/
+WORKDIR $HOME/nextjs
 RUN npm install --legacy-peer-deps
 
 # Stage 9: Application layer (final)
@@ -161,13 +164,22 @@ FROM nodejs-deps AS app
 
 # setup desktop env & app
 COPY --chown=$USERNAME:$USERNAME image/ $HOME
-COPY --chown=$USERNAME:$USERNAME computer_using_agent/ $HOME/computer_using_agent/
+COPY --chown=$USERNAME:$USERNAME agent/ $HOME/agent/
+COPY --chown=$USERNAME:$USERNAME nextjs/ $HOME/nextjs/
 
-# Build Next.js app
-WORKDIR $HOME/computer_using_agent/chat
+# Build Next.js app (conditionally)
+WORKDIR $HOME/nextjs
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-RUN npm run build
+
+# Add build argument for development mode
+ARG DEV_MODE=false
+RUN if [ "$DEV_MODE" = "false" ]; then \
+        npm run build; \
+    else \
+        echo "Skipping build in development mode"; \
+        mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
+    fi
 
 WORKDIR $HOME
 

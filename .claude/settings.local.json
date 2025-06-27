@@ -113,7 +113,8 @@
       "Bash(git remote rename:*)",
       "Bash(git remote add:*)",
       "Bash(git remote:*)",
-      "Bash(git filter-branch:*)"
+      "Bash(git filter-branch:*)",
+      "Bash(./build.sh:*)"
     ],
     "deny": []
   }

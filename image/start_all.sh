@@ -44,21 +44,31 @@ echo "MongoDB already running from entrypoint.sh..." | tee -a "$LOGS_DIR/startup
 echo "Starting Python API service..." | tee -a "$LOGS_DIR/startup.log"
 cd /home/computeragent
 export PYTHONPATH=/home/computeragent:$PYTHONPATH
-python -m computer_using_agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
+python -m agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
 API_PID=$!
 
 # Start Next.js app on port 8080 (main interface) with logging
 echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/computeragent/computer_using_agent/chat
-PORT=8080 npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+cd /home/computeragent/nextjs
+
+# Check if running in development mode
+if [ "$DEV_MODE" = "true" ]; then
+    echo "Running Next.js in development mode with hot reloading..." | tee -a "$LOGS_DIR/startup.log"
+    # Ensure .next directory exists with correct permissions for development mode
+    sudo mkdir -p .next && sudo chown -R computeragent:computeragent .next
+    PORT=8080 npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+else
+    echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
+    PORT=8080 npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+fi
 NEXTJS_PID=$!
 
-echo "All services started. MongoDB PID: $MONGO_PID, API PID: $API_PID, NextJS PID: $NEXTJS_PID" | tee -a "$LOGS_DIR/startup.log"
+echo "All services started. API PID: $API_PID, NextJS PID: $NEXTJS_PID" | tee -a "$LOGS_DIR/startup.log"
 echo "Logs available in $LOGS_DIR/" | tee -a "$LOGS_DIR/startup.log"
 
 # Quick MongoDB test for tasks collection
 echo "Testing MongoDB tasks collection..." | tee -a "$LOGS_DIR/startup.log"
-mongosh --eval "use signet-demo; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a "$LOGS_DIR/mongodb-test.txt"
+mongosh --eval "use automator; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a "$LOGS_DIR/mongodb-test.txt"
 
 # Function to handle cleanup
 cleanup() {

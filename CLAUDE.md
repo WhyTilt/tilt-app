@@ -15,11 +15,11 @@ AutomagicIT is an advanced computer automation system built on Anthropic's Compu
 - **MongoDB**: Task storage and result reporting
 
 **Key Components:**
-- `computer_using_agent/loop.py`: Core AI agent using Claude models
-- `computer_using_agent/tools/`: Extensible tool framework with versioning
-- `computer_using_agent/api_service/`: FastAPI backend for streaming chat
-- `computer_using_agent/chat/`: Next.js frontend with feature-based structure
-- `computer_using_agent/task_runner.py`: MongoDB-based task execution
+- `agent/loop.py`: Core AI agent using Claude models
+- `agent/tools/`: Extensible tool framework with versioning
+- `agent/api_service/`: FastAPI backend for streaming chat
+- `nextjs/`: Next.js frontend with feature-based structure
+- `agent/task_runner.py`: MongoDB-based task execution
 
 ## Development Commands
 
@@ -33,10 +33,10 @@ AutomagicIT is an advanced computer automation system built on Anthropic's Compu
 **Local Development:**
 ```bash
 # Frontend development
-cd computer_using_agent/chat && npm run dev    # Port 3001
+cd nextjs && npm run dev    # Port 3001
 
 # Python development  
-python -m computer_using_agent.api_service.main  # Port 8000
+python -m agent.api_service.main  # Port 8000
 
 # Testing
 pytest tests/                 # Python tests
@@ -56,10 +56,10 @@ TOOL_GROUPS_BY_VERSION = {
 ```
 
 **Adding New Tools:**
-1. Create tool class inheriting from `BaseAnthropicTool` in `computer_using_agent/tools/`
+1. Create tool class inheriting from `BaseAnthropicTool` in `agent/tools/`
 2. Implement `__call__()` async method and `to_params()` method
-3. Add to appropriate tool group in `computer_using_agent/tools/groups.py`
-4. Register in `computer_using_agent/tools/__init__.py`
+3. Add to appropriate tool group in `agent/tools/groups.py`
+4. Register in `agent/tools/__init__.py`
 
 **Existing Tool Categories:**
 - **Core**: `computer`, `str_replace_editor`, `bash` - Basic system interaction
@@ -84,8 +84,8 @@ TOOL_GROUPS_BY_VERSION = {
 - 27017: MongoDB
 
 **Key Configuration Files:**
-- `computer_using_agent/requirements.txt`: Python dependencies
-- `computer_using_agent/chat/package.json`: Node.js dependencies
+- `agent/requirements.txt`: Python dependencies
+- `nextjs/package.json`: Node.js dependencies
 - `Dockerfile`: Multi-stage container build with caching
 - `image/init_tasks.json`: Default task definitions
 
@@ -169,3 +169,41 @@ gh project item-edit --project-id PVT_kwHODNICkM4A7fzF --id ITEM_ID --field-id P
 ```bash
 gh project item-list 1 --owner itsmarktellez --format json | jq -r '.items[] | select(.content.number == ISSUE_NUMBER) | .id'
 ```
+
+## Design System & Color Palette
+
+AutomagicIT uses a carefully crafted dark theme with specific colors that create an elegant, professional appearance.
+
+### Primary Color Palette
+- **Background**: `#18181b` (zinc-900) - Main application background
+- **Panel Background**: `#1f1f23` - Floating panels and containers
+- **Panel Headers**: `#2a2a2e` (zinc-800) - Panel headers and navigation
+- **Borders**: `#3f3f46` (zinc-600) - Panel borders and dividers
+- **Text Primary**: `#ffffff` - Main text and headings
+- **Text Secondary**: `#a1a1aa` (zinc-400) - Descriptions and labels
+- **Text Muted**: `#71717a` (zinc-500) - Timestamps and metadata
+
+### Accent Colors
+- **Green**: `#22c55e` (green-500) - Success states, network monitoring indicators
+- **Green Light**: `#86efac` (green-300) - Network tab active state, highlights
+- **Blue**: `#3b82f6` (blue-500) - JavaScript indicators, primary actions
+- **Blue Light**: `#93c5fd` (blue-300) - JavaScript tab active state
+- **Red**: `#ef4444` (red-500) - Error states and alerts
+- **Yellow/Amber**: `#f59e0b` (amber-500) - Warning states
+
+### Component-Specific Colors
+- **Floating Panels**: 
+  - Background: `bg-zinc-900` with `border-zinc-600` borders
+  - Headers: `bg-zinc-800` with hover states in `hover:bg-zinc-700`
+- **Inspector Panel**:
+  - Content area: `bg-zinc-900` with proper syntax highlighting
+  - Network data: Green accents (`text-green-300`)
+  - JavaScript data: Blue accents (`text-blue-300`)
+- **Control Buttons**: Semi-transparent `bg-zinc-800/90` with backdrop blur
+
+### Typography
+- **Monospace**: Use `font-mono` for code, JSON, and technical data
+- **Line Height**: `leading-relaxed` for better readability in code blocks
+- **Font Weights**: Regular for content, `font-medium` for labels, `font-semibold` for headings
+
+This color scheme provides excellent contrast, readability, and maintains a modern professional aesthetic that users love.

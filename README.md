@@ -181,7 +181,7 @@ Once running, AutomagicIT provides multiple access points:
 
 ### Adding Custom Tools
 
-1. Create your tool class in `computer_using_agent/tools/`
+1. Create your tool class in `agent/tools/`
 2. Inherit from `BaseAnthropicTool`
 3. Implement required methods:
    ```python
@@ -193,7 +193,7 @@ Once running, AutomagicIT provides multiple access points:
        # Tool parameter definition
        pass
    ```
-4. Register in `computer_using_agent/tools/groups.py`
+4. Register in `agent/tools/groups.py`
 
 ### Testing
 

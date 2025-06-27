@@ -7,11 +7,11 @@ rm -rf ./logs/*
 mkdir -p ./logs
 
 # Parse command line arguments
-TASKS_MODE=false
+DEV_MODE=false
 for arg in "$@"; do
     case $arg in
-        --tasks)
-            TASKS_MODE=true
+        --dev)
+            DEV_MODE=true
             shift
             ;;
         *)
@@ -29,18 +29,29 @@ fi
 # Build if needed (check if Dockerfile is newer than any existing image)
 if [ -f "./build.sh" ]; then
     echo "Running build script..."
-    ./build.sh
+    ./build.sh $DEV_MODE
 elif [ -f "Dockerfile" ]; then
-    echo "Building Docker image..."
-    docker build -t automator .
+    if [ "$DEV_MODE" = "true" ]; then
+        echo "Building Docker image in development mode (skipping Next.js build)..."
+        docker build --build-arg DEV_MODE=true -t automator .
+    else
+        echo "Building Docker image in production mode..."
+        docker build --build-arg DEV_MODE=false -t automator .
+    fi
 fi
 
 # Set up Docker environment variables
-DOCKER_ENV_VARS="-e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY -e MONGODB_URI=$MONGODB_URI"
+DOCKER_ENV_VARS="-e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY -e MONGODB_URI=$MONGODB_URI -e DEV_MODE=$DEV_MODE"
 
+
+# Create db_data directory if it doesn't exist
+mkdir -p ./db_data
 
 docker run \
     $DOCKER_ENV_VARS \
+    -v /etc/timezone:/etc/timezone:ro \
+    -v /etc/localtime:/etc/localtime:ro \
+    -e TZ=$(cat /etc/timezone 2>/dev/null || echo "UTC") \
     -v $HOME/.anthropic:/home/computeragent/.anthropic \
     -v $(pwd)/user_data:/home/computeragent/user_data \
     -v $(pwd)/user_data/.mozilla:/home/computeragent/.mozilla \
@@ -54,6 +65,9 @@ docker run \
     -v $(pwd)/user_data/Documents:/home/computeragent/Documents \
     -v $(pwd)/user_data/Downloads:/home/computeragent/Downloads \
     -v $(pwd)/logs:/home/computeragent/logs \
+    -v $(pwd)/db_data:/data/db \
+    -v $(pwd)/nextjs:/home/computeragent/nextjs \
+    -v $(pwd)/agent:/home/computeragent/agent \
     -p 5900:5900 \
     -p 3001:3001 \
     -p 6080:6080 \
