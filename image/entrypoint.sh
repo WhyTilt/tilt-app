@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-# Start MongoDB service with ephemeral data directory
+# Start MongoDB service with persistent data directory
 echo "Starting MongoDB..."
-sudo mkdir -p /tmp/ephemeral-mongodb-db
-sudo chown -R mongodb:mongodb /tmp/ephemeral-mongodb-db
+sudo mkdir -p /data/db
+sudo chown -R mongodb:mongodb /data/db
 sudo cp ./mongod.conf /tmp/mongod.conf
 sudo chown mongodb:mongodb /tmp/mongod.conf
 sudo -u mongodb mongod --config /tmp/mongod.conf
@@ -21,24 +21,16 @@ for i in {1..30}; do
 done
 
 # Initialize database and collections
-echo "Initializing MongoDB database and loading tasks..."
-if [ -f "./init_tasks.json" ]; then
-    echo "Found init_tasks.json, loading tasks into database..."
-    mongosh < ./init_mongodb.js
-else
-    echo "Warning: init_tasks.json not found, initializing empty database"
-    mongosh --eval "use('signet-demo'); db.createCollection('tasks'); db.tasks.createIndex({'status': 1}); db.tasks.createIndex({'created_at': 1}); print('Empty database initialized');"
-fi
+echo "Initializing MongoDB database..."
+mongosh < ./init_mongodb.js > /dev/null 2>&1
+
+# Reset all tasks and app state to idle
+echo "Resetting tasks and app state..."
+mongosh < ./reset_tasks.js > /dev/null 2>&1
 
 ./start_all.sh
 ./novnc_startup.sh
 
-python http_server.py > /tmp/server_logs.txt 2>&1 &
-
-STREAMLIT_SERVER_PORT=8501 python -m streamlit run computer_using_agent/streamlit.py > /tmp/streamlit_stdout.log &
-
-echo "✨ Computer Use Demo is ready!"
-echo "➡️  Open http://localhost:8080 in your browser to begin"
 
 # Keep the container running
 tail -f /dev/null
