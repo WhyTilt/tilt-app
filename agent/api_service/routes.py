@@ -266,6 +266,7 @@ async def get_all_tasks():
             formatted_task = {
                 "id": str(task["_id"]),
                 "instructions": instructions,
+                "label": task.get('label'),
                 "status": task.get('status', 'pending'),
                 "created_at": task.get('created_at'),
                 "started_at": task.get('started_at'),

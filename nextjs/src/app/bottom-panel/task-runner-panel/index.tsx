@@ -149,55 +149,64 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       queue: [...taskQueue],
       initialQueueSize,
       autoRunning,
-      isAnyTaskRunning
+      isAnyTaskRunning,
+      tasksLength: tasks.length
     });
     
-    if (taskQueue.length > 0) {
-      const isBatchMode = initialQueueSize > 1; // Batch mode if started with >1 task
+    // Find tasks that haven't been completed yet
+    const remainingTaskIds = taskQueue.filter(taskId => {
+      const task = tasks.find(t => t.id === taskId);
+      const isIncluded = task && task.status !== 'passed' && task.status !== 'completed' && task.status !== 'failed';
+      console.log('🔥 TASK FILTER:', {
+        taskId,
+        task: task ? { id: task.id, status: task.status } : 'NOT_FOUND',
+        isIncluded
+      });
+      return isIncluded;
+    });
+    
+    console.log('🔥 REMAINING PENDING TASKS:', remainingTaskIds);
+    console.log('🔥 ALL TASKS:', tasks.map(t => ({ id: t.id, status: t.status })));
+    
+    if (remainingTaskIds.length > 0) {
+      const isBatchMode = initialQueueSize > 1;
       
       console.log('🔥 QUEUE PROCESSING: Processing next task from queue', {
-        queueLength: taskQueue.length,
+        remainingTaskIds: remainingTaskIds.length,
         initialQueueSize,
         isBatchMode,
         currentMode: isBatchMode ? 'BATCH' : 'SINGLE'
       });
       
-      // Pop the next task from the queue (get first item and remove it)
-      const nextTaskId = taskQueue[0];
-      setTaskQueue(prev => {
-        const newQueue = prev.slice(1);
-        console.log('🔥 QUEUE PROCESSING: Updated queue length', { 
-          old: prev.length, 
-          new: newQueue.length,
-          removedTaskId: nextTaskId 
-        });
-        return newQueue;
-      });
+      // Get the next task ID (first pending task)
+      const nextTaskId = remainingTaskIds[0];
       
-      // Find the actual task from the tasks database using _id
+      // Find the actual task from the tasks database
       const nextTask = tasks.find(task => task.id === nextTaskId);
       
-      if (nextTask) {
-        console.log('🔥 QUEUE PROCESSING: Found next task, executing', nextTask.id);
-        // Execute the next task
-        setTimeout(() => {
-          executeTaskWithVariables(nextTask);
-        }, 100); // Small delay to ensure state updates
-      } else {
-        console.error('🔥 QUEUE PROCESSING: Task not found in database', nextTaskId);
-        // Continue with next task if this one is missing
-        if (taskQueue.length > 0) {
-          setTimeout(() => {
-            processNextTaskInQueue();
-          }, 100);
+      if (nextTask && nextTask.status === 'pending') {
+        console.log('🔥 QUEUE PROCESSING: Found next pending task, executing', nextTask.id);
+        
+        // Execute the next task with variables
+        try {
+          await executeTaskWithVariables(nextTask, taskVariables);
+        } catch (error) {
+          console.error('🔥 ERROR executing task:', error);
+          // Continue with next task even if this one fails
+          setTimeout(() => processNextTaskInQueue(), 1000);
         }
+      } else {
+        console.log('🔥 QUEUE PROCESSING: No pending tasks found, trying next');
+        // Remove non-pending tasks and continue
+        setTaskQueue((prev: string[]) => prev.filter((id: string) => id !== nextTaskId));
+        setTimeout(() => processNextTaskInQueue(), 100);
       }
     } else {
       console.log('🔥 QUEUE PROCESSING: All tasks completed, stopping execution');
       setIsBatchRun(false);
       setAutoRunning(false);
       setIsAnyTaskRunning(false);
-      setInitialQueueSize(0); // Reset for next execution
+      setInitialQueueSize(0);
       setPanelMode('maximized');
     }
   };
@@ -857,13 +866,16 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
         };
         
         // Only mark task as completed if we got an actual response
+        console.log('🔥 SAVING TASK WITH LABEL:', task.label, 'ID:', task.id);
         await fetch(`${API_BASE_URL}/tasks/${task.id}/complete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
+            ...task, // Preserve all task fields including label
             result: streamingMessageRef.current,
             execution_report: finalExecutionReport,
-            status: finalStatus
+            status: finalStatus,
+            completed_at: new Date().toISOString()
           })
         });
         
@@ -893,83 +905,25 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
           taskId: task.id
         });
         
+        // Continue to next task if auto-running or batch mode
         if (isBatchRun || autoRunning) {
-          console.log('🔥 TASK COMPLETED - PROCESSING NEXT TASK IN QUEUE');
+          console.log('🔥 TASK COMPLETED - CURRENT QUEUE:', [...taskQueue]);
+          console.log('🔥 TASKS REMAINING AFTER COMPLETION:', taskQueue.filter(id => id !== task.id));
           runAllLogger.info('executeTaskWithVariables-success', 'Task completed, processing next in sequence');
           
-          // Use functional update to get current queue state and remove completed task
-          setTaskQueue(currentQueue => {
-            const remainingQueue = currentQueue.filter(taskId => taskId !== task.id);
-            
-            console.log('🔥 QUEUE UPDATE:', {
-              originalLength: currentQueue.length,
-              remainingLength: remainingQueue.length,
-              completedTaskId: task.id,
-              nextTaskId: remainingQueue[0] || 'none'
-            });
-            
-            runAllLogger.info('executeTaskWithVariables-success', 'Updated queue after task completion', {
-              originalLength: currentQueue.length,
-              remainingLength: remainingQueue.length,
-              completedTaskId: task.id,
-              nextTaskId: remainingQueue[0] || 'none'
-            });
-            
-            if (remainingQueue.length > 0) {
-              const nextTaskId = remainingQueue[0];
-              const nextTask = tasks.find(t => t.id === nextTaskId);
-              console.log('🔥 SCHEDULING NEXT TASK:', nextTaskId);
-              runAllLogger.logTaskExecution('executeTaskWithVariables-success', 'scheduling next task', nextTaskId);
-              
-              // Schedule next task execution after cleanup
-              if (nextTask) {
-                setTimeout(async () => {
-                  console.log('🔥 STARTING NEXT TASK:', nextTask.id);
-                  setIsAgentStarting(true);
-                  onAgentStarting?.(true);
-                  
-                  setTimeout(async () => {
-                    console.log('🔥 EXECUTING NEXT TASK:', nextTask.id);
-                    setIsAgentStarting(false);
-                    onAgentStarting?.(false);
-                    await executeTaskWithVariables(nextTask, taskVariables);
-                  }, 1000);
-                }, 4000); // Wait for cleanup to complete
-              } else {
-                console.error('🔥 NEXT TASK NOT FOUND IN TASKS ARRAY:', nextTaskId);
-              }
-            } else {
-              // All tasks completed
-              console.log('🔥 ALL TASKS COMPLETED - STOPPING AUTO-RUN');
-              runAllLogger.info('executeTaskWithVariables-success', 'All tasks completed, stopping auto-run');
+          // Process next task immediately - no complex state updates
+          setTimeout(async () => {
+            try {
+              // Simply process the next task in the queue
+              console.log('🔥 PROCESSING NEXT TASK IN QUEUE');
+              await processNextTaskInQueue();
+            } catch (error) {
+              console.error('🔥 ERROR PROCESSING NEXT TASK:', error);
               setAutoRunning(false);
               setIsAnyTaskRunning(false);
               setIsBatchRun(false);
-              setPanelMode('maximized');
-              
-              // Check if this was batch mode (multiple tasks initially)
-              const wasBatchMode = initialQueueSize > 1;
-              
-              runAllLogger.info('🔥 BATCH MODE DEBUG', 'ALL TASKS COMPLETED', {
-                initialQueueSize,
-                wasBatchMode,
-                completedTaskForReport: !!completedTaskForReport,
-                willShowModal: !!(completedTaskForReport && !wasBatchMode)
-              });
-              
-              // Only show task report in single mode, skip in batch mode
-              if (completedTaskForReport && !wasBatchMode) {
-                runAllLogger.error('🔥 BATCH MODE DEBUG', 'SHOWING TASK EXECUTION REPORT - THIS SHOULD NOT HAPPEN IN BATCH MODE!');
-                setTimeout(() => {
-                  setSelectedTaskReport(completedTaskForReport);
-                }, 500);
-              } else {
-                runAllLogger.info('🔥 BATCH MODE DEBUG', 'CORRECTLY SKIPPING TASK EXECUTION REPORT IN BATCH MODE');
-              }
             }
-            
-            return remainingQueue;
-          });
+          }, 1000); // Shorter delay
         }
       } else {
         console.log('No response received - not marking task as complete');
@@ -1056,11 +1010,13 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
         // Additional safety check: if no tasks are running and queue is empty, ensure states are cleared
         setTimeout(() => {
           if (taskQueue.length === 0 && !tasks.some(t => t.status === 'running')) {
+            console.log('🔥 SAFETY CHECK: Clearing all running states');
             setIsAnyTaskRunning(false);
             setAutoRunning(false);
             setIsBatchRun(false);
+            setCurrentTask(null);
           }
-        }, 100);
+        }, 500); // Increased timeout to ensure all state updates complete
       } catch (fetchError) {
         runAllLogger.error('executeTaskWithVariables-finally', 'Failed to refresh tasks', {
           error: String(fetchError)
@@ -1129,80 +1085,31 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
           willShowModal: !!(completedTaskForReport && !isBatchMode)
         });
         
-        // Only show task report in single mode, skip in batch mode  
-        if (completedTaskForReport && !isBatchMode) {
-          runAllLogger.error('🔥 BATCH MODE DEBUG', 'SHOWING TASK EXECUTION REPORT IN SINGLE MODE PATH - THIS SHOULD NOT HAPPEN IN BATCH MODE!');
-          setTimeout(() => {
-            setSelectedTaskReport(completedTaskForReport);
-          }, 500); // Small delay to ensure UI has updated
-        } else {
-          runAllLogger.info('🔥 BATCH MODE DEBUG', 'CORRECTLY SKIPPING TASK EXECUTION REPORT');
-        }
+        // NEVER show task report automatically - only when eye icon is clicked
+        runAllLogger.info('🔥 TASK COMPLETED', 'Task execution report available - click eye icon to view');
       }
     }
   };
 
-  // Execute a single task using the same queue mechanism as Run All
+  // Execute a single task using the simple queue
   const executeTask = async (task: Task) => {
-    runAllLogger.info('executeTask', `Single task execution called for task ${task.id}`);
+    console.log('🔥 SINGLE TASK RUN CLICKED:', task.id);
     
-    // FIX: Add null safety
-    if (!task || !task.id) {
-      runAllLogger.error('executeTask', 'Invalid task provided', { task });
-      return;
-    }
-    
-    runAllLogger.logQueueState('executeTask', {
-      taskQueue,
-      autoRunning,
-      isLoading,
-      currentTask,
-      isAnyTaskRunning,
-      isBatchRun
-    });
-    
-    // Clear queue and add this single task to it
-    clearTaskQueue();
-    addToTaskQueue(task.id);
-    
-    // Set initial queue size for single task execution (triggers single mode)
+    // Set up single task execution
+    setAutoRunning(true);
+    setIsAnyTaskRunning(true);
+    setIsBatchRun(false);
     setInitialQueueSize(1);
     
-    // Set batch run to enable queue processing
-    setIsBatchRun(true);
+    console.log('🔥 STARTING SINGLE TASK EXECUTION:', task.id);
     
-    const variables = extractVariables(task.instructions);
-    runAllLogger.debug('executeTask', 'Variables extraction result', {
-      taskId: task.id,
-      variables,
-      hasVariables: variables.length > 0
-    });
-    
-    if (variables.length > 0) {
-      runAllLogger.info('executeTask', 'Showing variable modal for single task', {
-        taskId: task.id,
-        variables
-      });
-      // Show modal for variable input
-      setCurrentTaskForVariables(task);
-      setShowVariableModal(true);
-    } else {
-      runAllLogger.info('executeTask', 'No variables found, executing task via queue', {
-        taskId: task.id
-      });
-      // No variables, execute via queue mechanism
-      setAutoRunning(true);
-      try {
-        await executeTaskWithVariables(task);
-        runAllLogger.info('executeTask', 'Single task execution completed successfully', {
-          taskId: task.id
-        });
-      } catch (error) {
-        runAllLogger.error('executeTask', 'Single task execution failed', {
-          taskId: task.id,
-          error: String(error)
-        });
-      }
+    // Execute the task directly
+    try {
+      await executeTaskWithVariables(task, taskVariables);
+    } catch (error) {
+      console.error('🔥 ERROR executing single task:', error);
+      setAutoRunning(false);
+      setIsAnyTaskRunning(false);
     }
   };
 
@@ -1250,60 +1157,88 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
   };
   
 
-  // Start auto-running tasks
-  const startAutoRun = async () => {
-    runAllLogger.info('startAutoRun', 'Starting Run All execution');
+  // Simple queue processor
+  const processQueue = async () => {
+    runAllLogger.info('processQueue', `🔥 CALLED - Queue length: ${taskQueue.length}`);
     
-    // Get all pending tasks and populate the task queue
-    const pendingTasks = tasks.filter(task => task.status === 'pending');
-    
-    runAllLogger.logQueueState('startAutoRun-initial', {
-      taskQueue,
-      autoRunning,
-      isLoading,
-      currentTask,
-      isAnyTaskRunning,
-      isBatchRun,
-      pendingTasks
-    });
-    
-    if (pendingTasks.length === 0) {
-      runAllLogger.warn('startAutoRun', 'No pending tasks to run');
+    if (taskQueue.length === 0) {
+      runAllLogger.info('processQueue', '🔥 QUEUE EMPTY - STOPPING ALL RUNNING');
+      setAutoRunning(false);
+      setIsAnyTaskRunning(false);
+      setIsBatchRun(false);
       return;
     }
     
-    runAllLogger.info('startAutoRun', `Found ${pendingTasks.length} pending tasks`, {
-      taskIds: pendingTasks.map(t => t.id)
-    });
+    // Get next task ID and pop it off
+    const nextTaskId = taskQueue[0];
+    runAllLogger.info('processQueue', `🔥 Next task ID: ${nextTaskId}`);
+    setTaskQueue(prev => prev.slice(1)); // Pop off the first ID
     
-    // Reset task queue and populate with pending tasks (just _id)
+    // Find the task
+    const task = tasks.find(t => t.id === nextTaskId);
+    if (!task) {
+      runAllLogger.error('processQueue', `🔥 TASK NOT FOUND: ${nextTaskId}`, {
+        availableTaskIds: tasks.map(t => t.id)
+      });
+      processQueue(); // Continue with next
+      return;
+    }
+    
+    runAllLogger.info('processQueue', `🔥 Processing task: ${task.id}, remaining: ${taskQueue.length - 1}`);
+    
+    // Execute the task
+    await executeTaskWithVariables(task);
+    
+    // Process next task in queue (executeTaskWithVariables handles completion)
+    setTimeout(() => processQueue(), 1000);
+  };
+
+  // Start auto-running ALL tasks
+  const startAutoRun = async () => {
+    runAllLogger.info('startAutoRun', '🔥 RUN ALL BUTTON CLICKED');
+    
+    // First ensure we have fresh task data
+    await fetchTasks();
+    
+    // Get only pending tasks to avoid re-running completed ones
+    const pendingTasks = tasks.filter(task => task.status === 'pending');
+    const allTaskIds = pendingTasks.map(task => task.id);
+    runAllLogger.info('startAutoRun', `🔥 Found ${allTaskIds.length} pending tasks`, { taskIds: allTaskIds });
+    
+    if (allTaskIds.length === 0) {
+      runAllLogger.warn('startAutoRun', '🔥 NO PENDING TASKS TO RUN');
+      return;
+    }
+    
+    // Set up queue with ALL pending task IDs
     clearTaskQueue();
-    pendingTasks.forEach(task => addToTaskQueue(task.id));
-    
-    // Set initial queue size for execution mode determination
-    setInitialQueueSize(pendingTasks.length);
-    
-    // Mark as batch run for auto-run functionality
+    allTaskIds.forEach(taskId => addToTaskQueue(taskId));
+    setAutoRunning(true);
     setIsBatchRun(true);
+    setInitialQueueSize(allTaskIds.length);
+    setIsAnyTaskRunning(true);
     
-    // Check if any tasks have variables
-    const allVariables = getAllVariablesFromTasks(pendingTasks);
-    if (allVariables.length > 0) {
-      runAllLogger.info('startAutoRun', 'Variables found, showing modal', { variables: allVariables });
-      // Show modal for variable input
-      setShowVariableModal(true);
-    } else {
-      runAllLogger.info('startAutoRun', 'No variables, starting execution directly');
-      setAutoRunning(true);
-      // Start with the first task, the queue will handle the rest
-      const firstTask = pendingTasks[0];
-      if (firstTask) {
-        runAllLogger.logTaskExecution('startAutoRun', 'starting first task', firstTask.id);
-        await executeTaskWithVariables(firstTask);
-      } else {
-        runAllLogger.error('startAutoRun', 'No first task found');
+    runAllLogger.info('startAutoRun', '🔥 Queue populated, starting first task execution');
+    
+    // Execute the first task directly
+    const firstTask = pendingTasks[0];
+    if (firstTask) {
+      console.log('🔥 STARTING FIRST TASK DIRECTLY:', firstTask.id);
+      try {
+        await executeTaskWithVariables(firstTask, taskVariables);
+      } catch (error) {
+        console.error('🔥 ERROR executing first task:', error);
+        runAllLogger.error('startAutoRun', 'Failed to execute first task', { error: String(error) });
+        // Reset states on error
         setAutoRunning(false);
+        setIsBatchRun(false);
+        setIsAnyTaskRunning(false);
       }
+    } else {
+      runAllLogger.error('startAutoRun', 'No first task found despite having task IDs');
+      setAutoRunning(false);
+      setIsBatchRun(false);
+      setIsAnyTaskRunning(false);
     }
   };
 
@@ -1780,7 +1715,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       {/* Task Execution Report Modal */}
       {selectedTaskReport && (
         <TaskExecutionReportModal
-          task={selectedTaskReport}
+          task={selectedTaskReport as any}
           isOpen={!!selectedTaskReport}
           onClose={() => setSelectedTaskReport(null)}
         />

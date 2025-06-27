@@ -292,7 +292,10 @@ export default function Home() {
       {/* Current Task Label - Top Right */}
       {currentRunningTask?.label && (
         <div className="fixed top-4 right-4 z-50 flex items-center bg-zinc-800/20 backdrop-blur-sm rounded-lg p-2 border border-zinc-600/30">
-          <span className="text-white font-medium text-sm">{currentRunningTask.label}</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+            <span className="text-white font-medium text-sm">{currentRunningTask.label}</span>
+          </div>
         </div>
       )}
 

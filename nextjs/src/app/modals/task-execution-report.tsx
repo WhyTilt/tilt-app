@@ -5,7 +5,7 @@ import React from 'react';
 interface Task {
   id: string;
   instructions: string[] | null;
-  status: 'pending' | 'running' | 'passed' | 'error' | 'failed';
+  status: 'pending' | 'running' | 'passed' | 'completed' | 'error' | 'failed';
   created_at: string;
   started_at?: string;
   completed_at?: string;
