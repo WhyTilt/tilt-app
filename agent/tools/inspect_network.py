@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore', module='pychrome')
 
 
 class NetworkInspectorTool(BaseAnthropicTool):
-    """Tool to monitor network requests in Chrome using pychrome library."""
+    """Tool to monitor network requests in Chromium using pychrome library."""
     
     name: str = "inspect_network"
     
@@ -47,8 +47,8 @@ class NetworkInspectorTool(BaseAnthropicTool):
         self._url_filter = None
         self._method_filter = None
     
-    def _get_chrome_browser(self) -> Optional[pychrome.Browser]:
-        """Get Chrome browser instance."""
+    def _get_chromium_browser(self) -> Optional[pychrome.Browser]:
+        """Get Chromium browser instance."""
         try:
             browser = pychrome.Browser(url="http://localhost:9222")
             return browser
@@ -57,15 +57,15 @@ class NetworkInspectorTool(BaseAnthropicTool):
     
     def _start_monitoring(self, url_filter: Optional[str] = None, method_filter: Optional[str] = None) -> Dict[str, Any]:
         """Start network monitoring without blocking."""
-        browser = self._get_chrome_browser()
+        browser = self._get_chromium_browser()
         if not browser:
-            return {"error": "Chrome remote debugging not available. Ensure Chrome is running with --remote-debugging-port=9222"}
+            return {"error": "Chromium remote debugging not available. Ensure Chromium is running with --remote-debugging-port=9222"}
         
         try:
             # Get the first tab
             tabs = browser.list_tab()
             if not tabs:
-                return {"error": "No Chrome tabs available"}
+                return {"error": "No Chromium tabs available"}
             
             # Store tab reference for later cleanup
             self._monitoring_tab = tabs[0]

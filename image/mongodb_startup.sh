@@ -29,6 +29,6 @@ mongosh < ./reset_tasks.js 2>&1 | tee -a ./logs/mongodb-reset.txt
 
 # Quick MongoDB test for tasks collection
 echo "Testing MongoDB tasks collection..." | tee -a ./logs/startup.log
-mongosh --eval "use automator; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a ./logs/mongodb-test.txt
+mongosh --eval "use tilt; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a ./logs/mongodb-test.txt
 
 echo "MongoDB startup and initialization complete!" | tee -a ./logs/startup.log

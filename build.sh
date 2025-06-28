@@ -14,7 +14,7 @@ fi
 # Build with BuildKit for better caching
 DOCKER_BUILDKIT=1 docker build \
     --target app \
-    --tag automator \
+    --tag tilt \
     --build-arg DEV_MODE=$DEV_MODE \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \

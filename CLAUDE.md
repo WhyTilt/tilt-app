@@ -63,7 +63,7 @@ TOOL_GROUPS_BY_VERSION = {
 
 **Existing Tool Categories:**
 - **Core**: `computer`, `str_replace_editor`, `bash` - Basic system interaction
-- **Web**: `inspect_js`, `inspect_network` - Browser automation (requires Chrome with --remote-debugging-port=9222)
+- **Web**: `inspect_js`, `inspect_network` - Browser automation (requires Chromium with --remote-debugging-port=9222)
 - **Database**: `mongodb_reporter`, `mongodb_query` - Task result storage
 - **Testing**: `assert` - Result validation
 

@@ -14,7 +14,7 @@ cd /home/computeragent
 
 # Set up environment variables
 export PYTHONPATH=/home/computeragent:$PYTHONPATH
-export MONGODB_URI="mongodb://localhost:27017/automator"
+export MONGODB_URI="mongodb://localhost:27017/tilt"
 
 # Check if MongoDB is running
 echo "Checking MongoDB connection..." | tee -a "$LOGS_DIR/task-runner.log"
@@ -44,7 +44,7 @@ logging.basicConfig(
 logger = logging.getLogger('task_runner_daemon')
 
 async def main():
-    mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/automator')
+    mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/tilt')
     logger.info(f'Starting TaskRunner with MongoDB URI: {mongodb_uri}')
     
     runner = TaskRunner(mongodb_uri)

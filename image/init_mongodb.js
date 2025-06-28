@@ -1,15 +1,15 @@
 // MongoDB initialization script
 // This script sets up the initial database, collection, and loads initial tasks
 
-// Use the automator database
-use('automator');
+// Use the tilt database
+use('tilt');
 
 // Initialize database for persistent storage (preserve existing data)
 print("Initializing database for persistent storage...");
 
-// Switch to the automator database
-use('automator');
-print("Using database: automator");
+// Switch to the tilt database
+use('tilt');
+print("Using database: tilt");
 
 // Check if tasks collection exists, create if it doesn't
 const collections = db.getCollectionNames();
@@ -33,4 +33,4 @@ print(`Database contains ${taskCount} existing tasks`);
 // Database initialized with empty tasks collection for persistent storage
 print("\nDatabase initialized with empty tasks collection for persistent storage");
 
-print("\nMongoDB database 'automator' initialization completed!");
+print("\nMongoDB database 'tilt' initialization completed!");
