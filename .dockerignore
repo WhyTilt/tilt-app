@@ -1,0 +1,8 @@
+db_data/
+logs/
+user_data/
+.git/
+node_modules/
+.env.local
+*.log
+*.tmp

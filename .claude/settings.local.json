@@ -114,7 +114,8 @@
       "Bash(git remote add:*)",
       "Bash(git remote:*)",
       "Bash(git filter-branch:*)",
-      "Bash(./build.sh:*)"
+      "Bash(./build.sh:*)",
+      "WebFetch(domain:whytilt.com)"
     ],
     "deny": []
   }

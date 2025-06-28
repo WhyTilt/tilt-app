@@ -302,23 +302,22 @@ export default function Home() {
       {/* Floating Logo - Bottom Right */}
       <div 
         className="fixed bottom-4 right-4 z-50 flex items-center bg-zinc-800/20 backdrop-blur-sm rounded-lg p-2 border border-zinc-600/30 cursor-pointer hover:bg-zinc-800/30 transition-colors"
-        onClick={() => window.open('https://automagicit.com', '_blank')}
+        onClick={() => window.open('https://whytilt.com', '_blank')}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            window.open('https://automagicit.com', '_blank');
+            window.open('https://whytilt.com', '_blank');
           }
         }}
       >
         <div className="relative w-6 h-6">
           <img 
-            src="/favicon-32x32.png" 
-            alt="AutomagicIT Logo" 
+            src="/logo.png"
+            alt="Tilt Logo" 
             className="w-full h-full"
           />
         </div>
-        <span className="text-white font-medium text-sm ml-2">AutomagicIT</span>
       </div>
 
 

@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# AutomagicIT Computer Automation System
+# Tilt Computer Automation System
 
-AutomagicIT is an advanced computer automation system built on Anthropic's Computer Use API. It provides automated website testing, UI automation, and task execution with visual feedback through a Docker-containerized environment.
+Tilt is an advanced computer automation system built on Anthropic's Computer Use API. It provides automated website testing, UI automation, and task execution with visual feedback through a Docker-containerized environment.
 
 ## Core Architecture
 

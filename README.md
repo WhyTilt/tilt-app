@@ -1,11 +1,11 @@
-# AutomagicIT
+# Tilt
 
 [![License](https://img.shields.io/badge/License-Small%20Business%20Source-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![AI](https://img.shields.io/badge/AI-Claude%20Sonnet%204-FF6B35?logo=anthropic&logoColor=white)](https://www.anthropic.com)
-[![Website](https://img.shields.io/badge/Website-automagicit.com-FF6B35?logo=safari&logoColor=white)](https://automagicit.com)
-[![X](https://img.shields.io/badge/X-@_automagicit-1DA1F2?logo=x&logoColor=white)](https://x.com/_automagicit)
-[![YouTube](https://img.shields.io/badge/YouTube-automagicit-FF0000?logo=youtube&logoColor=white)](https://youtube.com/@automagicit)
+[![Website](https://img.shields.io/badge/Website-whytilt.com-FF6B35?logo=safari&logoColor=white)](https://whytilt.com)
+[![X](https://img.shields.io/badge/X-@whytilt-1DA1F2?logo=x&logoColor=white)](https://x.com/whytilt)
+[![YouTube](https://img.shields.io/badge/YouTube-tilt-FF0000?logo=youtube&logoColor=white)](https://youtube.com/@tilt)
 
 **Advanced Computer Automation System powered by Claude Sonnet 4**
 

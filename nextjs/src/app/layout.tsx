@@ -6,8 +6,7 @@ import { TaskRunnerProvider } from '@/app/task-runner/context'
 import { PanelPreferencesProvider } from '@/app/panel-preferences/context'
 
 export const metadata: Metadata = {
-  title: 'AutomagicIT - Automate your desktop and browser based tasks',
-  description: 'AI-powered automation for desktop and browser tasks using our intelligent agent.',
+  title: 'Intelligent Desktop - Tilt',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
