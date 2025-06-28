@@ -344,38 +344,24 @@ export default function Home() {
           {/* Screenshot/VNC Mode Controls */}
           {(taskState !== 'idle' || screenshots.length > 0) && (
             <>
-              {/* VNC Toggle */}
+              {/* Mode Toggle Button - Shows VNC when in screenshot mode, shows picture when in VNC mode */}
               <button
                 onClick={() => setShowVncPanel(!showVncPanel)}
                 className="p-2 bg-transparent border border-zinc-600 hover:bg-zinc-700 rounded-lg transition-colors"
                 title={showVncPanel ? "Show Screenshots" : "Show VNC"}
               >
                 {showVncPanel ? (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="m4 4 16 16M4 20h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z" />
+                  /* Show picture icon when in VNC mode */
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 ) : (
+                  /* Show VNC text when in screenshot mode */
                   <div className="w-6 h-5 text-white flex items-center justify-center text-[9px] font-bold rounded px-1">
                     VNC
                   </div>
                 )}
               </button>
-
-              {/* Screenshot Mode Indicators - only show when in screenshot mode and have screenshots */}
-              {!showVncPanel && screenshots.length > 0 && (
-                <>
-                  {/* Show current mode number and toggle to other mode */}
-                  <button
-                    onClick={() => setViewMode(viewMode === 'single' ? 'dual' : 'single')}
-                    className="p-2 bg-transparent border border-zinc-600 hover:bg-zinc-700 rounded-lg transition-colors"
-                    title={`Switch to ${viewMode === 'single' ? 'dual' : 'single'} screenshot view`}
-                  >
-                    <div className="w-5 h-5 text-white flex items-center justify-center text-sm font-bold">
-                      {viewMode === 'single' ? '2' : '1'}
-                    </div>
-                  </button>
-                </>
-              )}
 
             </>
           )}
