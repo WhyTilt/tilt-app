@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=Chrome Custom
-Comment=Open Chrome with remote debugging
-Exec=google-chrome --no-first-run --incognito --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir=/tmp/chrome_profile --no-sandbox --disable-dev-shm-usage
-Icon=google-chrome
+Name=Chromium Custom
+Comment=Open Chromium with remote debugging
+Exec=chromium-browser --no-first-run --incognito --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir=/tmp/chrome_profile --no-sandbox --disable-dev-shm-usage
+Icon=chromium-browser
 Terminal=false
 Type=Application
 Categories=Network;WebBrowser;

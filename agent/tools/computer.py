@@ -293,7 +293,7 @@ class BaseComputerTool:
         return round(x * x_scaling_factor), round(y * y_scaling_factor)
     
     async def _check_and_start_network_monitoring(self):
-        """Check if Chrome was just opened and start network monitoring if available."""
+        """Check if Chromium was just opened and start network monitoring if available."""
         try:
             import subprocess
             import asyncio
@@ -301,43 +301,43 @@ class BaseComputerTool:
             import time
             
             logger = logging.getLogger('tools')
-            logger.info("Checking if Chrome opened after click...")
+            logger.info("Checking if Chromium opened after click...")
             
-            # Wait a moment for Chrome to fully start up
+            # Wait a moment for Chromium to fully start up
             await asyncio.sleep(1)
             
-            # Check if Chrome is now running with remote debugging
+            # Check if Chromium is now running with remote debugging
             try:
                 result = subprocess.run(['curl', '-s', 'http://localhost:9222/json'], 
                                       capture_output=True, timeout=3)
-                chrome_available = result.returncode == 0
-                if chrome_available:
-                    logger.info("Chrome with remote debugging detected!")
+                chromium_available = result.returncode == 0
+                if chromium_available:
+                    logger.info("Chromium with remote debugging detected!")
                 else:
-                    logger.info("Chrome not yet available or no remote debugging")
+                    logger.info("Chromium not yet available or no remote debugging")
                     return
             except Exception as e:
-                logger.info(f"Chrome check failed: {e}")
+                logger.info(f"Chromium check failed: {e}")
                 return
             
-            if chrome_available and hasattr(self, '_tool_collection') and self._tool_collection:
+            if chromium_available and hasattr(self, '_tool_collection') and self._tool_collection:
                 network_tool = next((tool for tool in self._tool_collection.tools 
                                    if tool.name == "inspect_network"), None)
                 if network_tool:
                     # Check if already monitoring
                     if not hasattr(network_tool, '_monitoring') or not network_tool._monitoring:
-                        logger.info("Chrome detected after click, auto-starting network monitoring...")
+                        logger.info("Chromium detected after click, auto-starting network monitoring...")
                         result = await network_tool(action="monitor_start")
                         if result.error:
                             logger.warning(f"Failed to auto-start network monitoring: {result.error}")
                         else:
-                            logger.info("Network monitoring auto-started successfully after Chrome opened!")
+                            logger.info("Network monitoring auto-started successfully after Chromium opened!")
                     else:
                         logger.info("Network monitoring already running, skipping auto-start")
                 else:
                     logger.warning("Network tool not found in tool collection")
             else:
-                logger.info("Chrome available but tool collection not accessible")
+                logger.info("Chromium available but tool collection not accessible")
                 
         except Exception as e:
             logger.warning(f"Exception in _check_and_start_network_monitoring: {str(e)}")
@@ -455,7 +455,7 @@ class ComputerTool20250124(BaseComputerTool, BaseAnthropicTool):
 
             result = await self.shell(" ".join(command_parts))
             
-            # Check if Chrome was just opened after a click
+            # Check if Chromium was just opened after a click
             await self._check_and_start_network_monitoring()
             
             return result

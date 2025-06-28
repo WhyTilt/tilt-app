@@ -33,10 +33,10 @@ if [ -f "./build.sh" ]; then
 elif [ -f "Dockerfile" ]; then
     if [ "$DEV_MODE" = "true" ]; then
         echo "Building Docker image in development mode (skipping Next.js build)..."
-        docker build --build-arg DEV_MODE=true -t automator .
+        docker build --build-arg DEV_MODE=true -t tilt .
     else
         echo "Building Docker image in production mode..."
-        docker build --build-arg DEV_MODE=false -t automator .
+        docker build --build-arg DEV_MODE=false -t tilt .
     fi
 fi
 
@@ -73,7 +73,7 @@ docker run \
     -p 6080:6080 \
     -p 8000:8000 \
     -p 8080:8080 \
-    -it automator:latest
+    -it tilt:latest
 
 echo ""
 echo "➡️  Open http://localhost:3001 for automagic"
