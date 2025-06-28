@@ -13,14 +13,14 @@ warnings.filterwarnings('ignore', module='pychrome')
 
 
 class JavaScriptInspectorTool(BaseAnthropicTool):
-    """Tool to execute JavaScript code in Chrome using pychrome library."""
+    """Tool to execute JavaScript code in Chromium using pychrome library."""
     
     name: str = "inspect_js"
     
     def to_params(self) -> BetaToolUnionParam:
         return {
             "name": self.name,
-            "description": "Execute JavaScript code in the current Chrome browser tab to inspect page elements, extract data, or interact with web APIs. Use this when you need to access browser-specific data like window objects, DOM elements, or execute JavaScript that returns values from the page. Chrome must be running with remote debugging enabled on port 9222.",
+            "description": "Execute JavaScript code in the current Chromium browser tab to inspect page elements, extract data, or interact with web APIs. Use this when you need to access browser-specific data like window objects, DOM elements, or execute JavaScript that returns values from the page. Chromium must be running with remote debugging enabled on port 9222.",
             "input_schema": {
                 "type": "object",
                 "properties": {
@@ -38,8 +38,8 @@ class JavaScriptInspectorTool(BaseAnthropicTool):
             }
         }
     
-    def _get_chrome_browser(self) -> Optional[pychrome.Browser]:
-        """Get Chrome browser instance."""
+    def _get_chromium_browser(self) -> Optional[pychrome.Browser]:
+        """Get Chromium browser instance."""
         try:
             browser = pychrome.Browser(url="http://localhost:9222")
             return browser
@@ -48,16 +48,16 @@ class JavaScriptInspectorTool(BaseAnthropicTool):
     
     def _execute_javascript(self, code: str, timeout: int = 10) -> Dict[str, Any]:
         """Execute JavaScript code via pychrome and return the result."""
-        browser = self._get_chrome_browser()
+        browser = self._get_chromium_browser()
         if not browser:
-            return {"error": "Chrome remote debugging not available. Ensure Chrome is running with --remote-debugging-port=9222"}
+            return {"error": "Chromium remote debugging not available. Ensure Chromium is running with --remote-debugging-port=9222"}
         
         tab = None
         try:
             # Get the first tab
             tabs = browser.list_tab()
             if not tabs:
-                return {"error": "No Chrome tabs available"}
+                return {"error": "No Chromium tabs available"}
             
             tab = tabs[0]
             tab.start()

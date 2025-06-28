@@ -600,7 +600,7 @@ async def cleanup_browser():
         
        
         # Kill any remaining browser-related processes
-        browsers = ["chrome", "chromium"]
+        browsers = ["chromium"]
         for browser in browsers:
             try:
                 result = subprocess.run(

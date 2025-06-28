@@ -68,7 +68,7 @@ echo "Logs available in $LOGS_DIR/" | tee -a "$LOGS_DIR/startup.log"
 
 # Quick MongoDB test for tasks collection
 echo "Testing MongoDB tasks collection..." | tee -a "$LOGS_DIR/startup.log"
-mongosh --eval "use automator; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a "$LOGS_DIR/mongodb-test.txt"
+mongosh --eval "use tilt; print('Task count: ' + db.tasks.countDocuments()); db.tasks.find().limit(3).forEach(doc => print('Task: ' + doc.instructions + ' (Status: ' + doc.status + ')'));" 2>&1 | tee -a "$LOGS_DIR/mongodb-test.txt"
 
 # Function to handle cleanup
 cleanup() {
