@@ -4,7 +4,7 @@ set -e
 
 # Create logs directory using absolute path
 LOGS_DIR="/home/computeragent/logs"
-
+mkdir -p "$LOGS_DIR"
 
 cd /home/computeragent
 

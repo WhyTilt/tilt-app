@@ -35,8 +35,11 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [isResizing, setIsResizing] = useState(false);
+    const [resizeDirection, setResizeDirection] = useState<'height' | 'width' | 'both'>('height');
     const [resizeStartHeight, setResizeStartHeight] = useState(0);
+    const [resizeStartWidth, setResizeStartWidth] = useState(0);
     const [resizeStartY, setResizeStartY] = useState(0);
+    const [resizeStartX, setResizeStartX] = useState(0);
     
     // Use persisted state or fallback to defaults
     const isVisible = panelState?.visible ?? defaultVisible;
@@ -111,25 +114,75 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
       setIsResizing(false);
     };
 
-    const handleResizeMouseDown = (e: React.MouseEvent) => {
+    const handleResizeMouseDown = (e: React.MouseEvent, direction: 'height' | 'width' | 'both') => {
       e.stopPropagation(); // Prevent dragging when resizing
       setIsResizing(true);
-      setResizeStartHeight(size.height);
-      setResizeStartY(e.clientY);
+      setResizeDirection(direction);
+      
+      if (direction === 'height') {
+        setResizeStartHeight(size.height);
+        setResizeStartY(e.clientY);
+      } else if (direction === 'width') {
+        setResizeStartWidth(size.width);
+        setResizeStartX(e.clientX);
+      } else {
+        // Both dimensions
+        setResizeStartHeight(size.height);
+        setResizeStartWidth(size.width);
+        setResizeStartY(e.clientY);
+        setResizeStartX(e.clientX);
+      }
     };
 
     const handleResizeMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
       
-      const deltaY = e.clientY - resizeStartY;
-      const newHeight = Math.max(150, resizeStartHeight + deltaY); // Minimum height of 150px
+      // Get viewport dimensions for constraints
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       
-      updatePanelState(panelName, { 
-        size: { 
-          ...size, 
-          height: newHeight 
-        } 
-      });
+      if (resizeDirection === 'height') {
+        const deltaY = e.clientY - resizeStartY;
+        // Minimum 20% of viewport height, absolute minimum of 150px
+        const minHeight = Math.max(150, viewportHeight * 0.2);
+        const newHeight = Math.max(minHeight, resizeStartHeight + deltaY);
+        
+        updatePanelState(panelName, { 
+          size: { 
+            ...size, 
+            height: newHeight 
+          } 
+        });
+      } else if (resizeDirection === 'width') {
+        const deltaX = e.clientX - resizeStartX;
+        // Minimum 10% of viewport width, absolute minimum of 200px
+        const minWidth = Math.max(200, viewportWidth * 0.1);
+        const newWidth = Math.max(minWidth, resizeStartWidth + deltaX);
+        
+        updatePanelState(panelName, { 
+          size: { 
+            ...size, 
+            width: newWidth 
+          } 
+        });
+      } else {
+        // Both dimensions
+        const deltaY = e.clientY - resizeStartY;
+        const deltaX = e.clientX - resizeStartX;
+        
+        // Apply constraints for both dimensions
+        const minHeight = Math.max(150, viewportHeight * 0.2);
+        const minWidth = Math.max(200, viewportWidth * 0.1);
+        const newHeight = Math.max(minHeight, resizeStartHeight + deltaY);
+        const newWidth = Math.max(minWidth, resizeStartWidth + deltaX);
+        
+        updatePanelState(panelName, { 
+          size: { 
+            width: newWidth,
+            height: newHeight 
+          } 
+        });
+      }
     };
 
     React.useEffect(() => {
@@ -152,7 +205,7 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
           document.removeEventListener('mouseup', handleMouseUp);
         };
       }
-    }, [isResizing, resizeStartHeight, resizeStartY]);
+    }, [isResizing, resizeStartHeight, resizeStartY, resizeStartWidth, resizeStartX, resizeDirection]);
 
     if (!isVisible) return null;
 
@@ -238,15 +291,36 @@ export const FloatingPanel = forwardRef<FloatingPanelRef, FloatingPanelProps>(
           {children}
         </div>
 
-        {/* Resize Handle - Bottom Edge */}
+        {/* Resize Handles */}
         {!isMaximized && (
-          <div
-            onMouseDown={handleResizeMouseDown}
-            className="absolute bottom-0 left-0 right-0 h-1 cursor-ns-resize bg-transparent hover:bg-zinc-600/50 transition-colors group"
-            title="Drag to resize height"
-          >
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-600/30 group-hover:bg-zinc-500/60 transition-colors" />
-          </div>
+          <>
+            {/* Bottom Edge - Height Resize */}
+            <div
+              onMouseDown={(e) => handleResizeMouseDown(e, 'height')}
+              className="absolute bottom-0 left-0 right-0 h-1 cursor-ns-resize bg-transparent hover:bg-zinc-600/50 transition-colors group"
+              title="Drag to resize height"
+            >
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-600/30 group-hover:bg-zinc-500/60 transition-colors" />
+            </div>
+            
+            {/* Right Edge - Width Resize */}
+            <div
+              onMouseDown={(e) => handleResizeMouseDown(e, 'width')}
+              className="absolute top-0 right-0 bottom-0 w-1 cursor-ew-resize bg-transparent hover:bg-zinc-600/50 transition-colors group"
+              title="Drag to resize width"
+            >
+              <div className="absolute top-0 right-0 bottom-0 w-0.5 bg-zinc-600/30 group-hover:bg-zinc-500/60 transition-colors" />
+            </div>
+            
+            {/* Corner Resize Handle - Both dimensions */}
+            <div
+              onMouseDown={(e) => handleResizeMouseDown(e, 'both')}
+              className="absolute bottom-0 right-0 w-3 h-3 cursor-nw-resize bg-transparent hover:bg-zinc-600/50 transition-colors group"
+              title="Drag to resize both width and height"
+            >
+              <div className="absolute bottom-0 right-0 w-2 h-2 bg-zinc-600/30 group-hover:bg-zinc-500/60 transition-colors" />
+            </div>
+          </>
         )}
       </div>
     );
