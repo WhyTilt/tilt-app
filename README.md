@@ -9,30 +9,13 @@
 
 **Advanced Computer Automation System powered by Claude Sonnet 4**
 
-AutomagicIT is a sophisticated computer automation platform that transforms natural language instructions into automated workflows. Built on Anthropic's Computer Use API, it provides intelligent, AI-driven automation for web testing, UI interaction, and complex task execution through a containerized virtual desktop environment.
+Tilt is a sophisticated computer automation platform that transforms natural language instructions into automated workflows. Built on Anthropic's Computer Use API, it provides intelligent, AI-driven automation for web testing, UI interaction, and complex task execution through a containerized virtual desktop environment.
 
 ⭐️ **Your star powers our automation magic**
 
-<!-- ## 💖 Support AutomagicIT
-
-Help us continue developing cutting-edge automation tools! Your support enables us to:
-- 🚀 Add new AI models and providers
-- 🛠️ Build advanced automation capabilities  
-- 📚 Create comprehensive documentation and tutorials
-- 🐛 Provide faster bug fixes and feature development
-
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-EA4AAA?logo=github&logoColor=white)](https://github.com/sponsors/AutomagicIT)
-
-**Why GitHub Sponsors?**
-- ✅ Integrated with GitHub (adds credibility)
-- ✅ Easy for developers already on GitHub
-- ✅ Supports one-time and recurring payments
-- ✅ Multiple tiers: $5, $25, $50+ monthly options
-- ✅ Show your support directly on your GitHub profile -->
-
 ## About
 
-AutomagicIT combines the power of large language models with practical computer automation tools to create a comprehensive testing and automation platform. Whether you're automating e-commerce workflows, performing quality assurance testing, or extracting data from complex web applications, AutomagicIT provides the visual feedback and programmatic control you need.
+Tilt combines the power of large language models with practical computer automation tools to create a comprehensive testing and automation platform. Whether you're automating e-commerce workflows, performing quality assurance testing, or extracting data from complex web applications, Tilt provides the visual feedback and programmatic control you need.
 
 **Key Capabilities:**
 - 🖥️ Full desktop automation with visual feedback
@@ -44,13 +27,13 @@ AutomagicIT combines the power of large language models with practical computer 
 
 ## Architecture
 
-AutomagicIT is built as a multi-container system with clear separation of concerns:
+Tilt is built as a multi-container system with clear separation of concerns:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Next.js UI    │    │  FastAPI Server  │    │  Docker Desktop │
 │   Port 3001     │◄──►│   Port 8000      │◄──►│   Ubuntu 22.04  │
-│   Port 8080     │    │  Claude AI Loop  │    │   X11/VNC       │
+│                 │    │  Claude AI Loop  │    │   X11/VNC       │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
@@ -82,7 +65,7 @@ AutomagicIT is built as a multi-container system with clear separation of concer
 
 ```bash
 # Clone the repository
-git clone https://github.com/AutomagicIT/the-automator.git
+git clone https://github.com/WhyTilt/tiltapp.git
 cd the-automator
 
 # Set your API key
@@ -149,10 +132,9 @@ Open your browser to [http://localhost:3001](http://localhost:3001) and start au
 
 ## Interface Access
 
-Once running, AutomagicIT provides multiple access points:
+Once running, Tilt provides multiple access points:
 
 - **Frontend**: [http://localhost:3001](http://localhost:3001) - Next.js application server
-- **Main Interface**: [http://localhost:8080](http://localhost:8080) - Combined Next.js frontend with desktop view
 - **Python API**: [http://localhost:8000](http://localhost:8000) - FastAPI backend server
 - **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
 - **VNC Client**: `vnc://localhost:5900` - For external VNC clients
@@ -164,9 +146,7 @@ Once running, AutomagicIT provides multiple access points:
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ANTHROPIC_API_KEY` | Your Anthropic API key | Required |
-| `API_PROVIDER` | API provider (anthropic/bedrock/vertex) | anthropic |
 | `ANTHROPIC_MODEL` | Claude model to use | claude-sonnet-4-20250514 |
-| `MONGODB_URI` | MongoDB connection string | mongodb://localhost:27017 |
 | `WIDTH` | Desktop resolution width | 1024 |
 | `HEIGHT` | Desktop resolution height | 768 |
 
@@ -228,20 +208,18 @@ newgrp docker
 
 ## Community & Support
 
-- 🌐 [Website](https://automagicit.com)
-- 📺 [YouTube](https://youtube.com/@automagicit)
-- 🐦 [X (Twitter)](https://x.com/_automagicit)
+- 🌐 [Website](https://whytilt.com)
 - 🤝 [Contributing](CONTRIBUTING.md)
 - 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
-- 🐛 [Issues](https://github.com/AutomagicIT/the-automator/issues)
-- 💬 [Discussions](https://github.com/AutomagicIT/the-automator/discussions)
+- 🐛 [Issues](https://Tilt.com/WhyTilt/tiltapp/issues)
+- 💬 [Discussions](https://Tilt.com/WhyTilt/tiltapp/discussions)
 
 ## Licensing
 
 This project is dual-licensed under a Small Business Source License and a separate commercial license.
 
 - **Free to use** for businesses with fewer than 50 employees and less than $250,000 USD annual revenue
-- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue) - Contact sales@automagicit.com
+- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue) - Contact sales@Tilt.com
 
 ### License Files
 
