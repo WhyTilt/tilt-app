@@ -720,7 +720,7 @@ async def get_panel_preferences():
         
         if not prefs_doc:
             # Check if this is first run and create better defaults
-            first_run_file = "/home/computeragent/.automagicit_first_run"
+            first_run_file = "/home/computeragent/.tilt_first_run"
             is_first_run = not os.path.exists(first_run_file)
             
             if is_first_run:

@@ -4,7 +4,7 @@
 
 LOG_DIR="/tmp/logs"
 
-echo "=== AutomagicIT Log Viewer ==="
+echo "=== Tilt Log Viewer ==="
 echo "Available logs:"
 echo "1. API Service (api.log)"
 echo "2. NextJS App (nextjs.log)"  

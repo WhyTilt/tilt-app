@@ -172,7 +172,7 @@ gh project item-list 1 --owner itsmarktellez --format json | jq -r '.items[] | s
 
 ## Design System & Color Palette
 
-AutomagicIT uses a carefully crafted dark theme with specific colors that create an elegant, professional appearance.
+Tilt uses a carefully crafted dark theme with specific colors that create an elegant, professional appearance.
 
 ### Primary Color Palette
 - **Background**: `#18181b` (zinc-900) - Main application background

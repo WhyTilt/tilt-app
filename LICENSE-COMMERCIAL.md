@@ -8,4 +8,4 @@ The commercial license grants the right to:
 
 Commercial licenses do not include rights to the machine learning models or weights, which must be separately licensed or obtained.
 
-To request a commercial license or obtain a quote, please contact: sales@automagicit.com
+To request a commercial license or obtain a quote, please contact: hello@whytilt.com

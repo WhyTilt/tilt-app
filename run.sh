@@ -76,4 +76,4 @@ docker run \
     -it tilt:latest
 
 echo ""
-echo "➡️  Open http://localhost:3001 for automagic"
+echo "➡️  Open http://localhost:3001 for Tilt"

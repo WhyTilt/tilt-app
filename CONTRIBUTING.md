@@ -1,6 +1,6 @@
-# Contributing to AutomagicIT
+# Contributing to Tilt
 
-Thank you for your interest in contributing to AutomagicIT! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Tilt! This document provides guidelines and information for contributors.
 
 ## Table of Contents
 
@@ -34,12 +34,12 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/AutomagicIT/the-automator.git
-   cd the-automator
+   git clone https://github.com/WhyTilt/tilt-app.git
+   cd tilt-app
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/original-owner/the-automator.git
+   git remote add upstream https://github.com/WhyTilt/tilt-app.git
    ```
 
 ## Development Setup
@@ -316,4 +316,4 @@ Contributors are recognized through:
 
 ---
 
-**Thank you for contributing to AutomagicIT!** Your efforts help make computer automation more accessible and powerful for everyone.
+**Thank you for contributing to Tilt!** Your efforts help make computer automation more accessible and powerful for everyone.

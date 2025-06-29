@@ -66,7 +66,7 @@ export function PanelPreferencesProvider({ children }: { children: ReactNode }) 
         
         // Check if this was a first run
         if (data.isFirstRun) {
-          console.log('🎉 Welcome! This is your first time running AutomagicIT. Default panel positions have been set up for you.');
+          console.log('🎉 Welcome! This is your first time running Tilt. Default panel positions have been set up for you.');
         }
       }
     } catch (error) {

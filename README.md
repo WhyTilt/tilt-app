@@ -208,15 +208,15 @@ newgrp docker
 - 🌐 [Website](https://whytilt.com)
 - 🤝 [Contributing](CONTRIBUTING.md)
 - 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
-- 🐛 [Issues](https://Tilt.com/WhyTilt/tiltapp/issues)
-- 💬 [Discussions](https://Tilt.com/WhyTilt/tiltapp/discussions)
+- 🐛 [Issues](https://github.com/WhyTilt/tilt-app/issues)
+- 💬 [Discussions](https://github.com/WhyTilt/tilt-app/discussions)
 
 ## Licensing
 
 This project is dual-licensed under a Small Business Source License and a separate commercial license.
 
 - **Free to use** for businesses with fewer than 50 employees and less than $250,000 USD annual revenue
-- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue) - Contact sales@Tilt.com
+- **Commercial license required** for larger organizations (50+ employees OR $250K+ revenue) - Contact hello@whytilt.com
 
 ### License Files
 
@@ -225,4 +225,3 @@ This project is dual-licensed under a Small Business Source License and a separa
 - `LICENSE-MIT.md` - Original MIT license for code derived from Anthropic's project
 - `NOTICE.md` - Attribution statement for original source code
 
-# the-automator

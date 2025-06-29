@@ -27,10 +27,8 @@
       "Bash(gh project create:*)",
       "Bash(gh project edit:*)",
       "Bash(ls:*)",
-      "Bash(MONGODB_CONNECTION_STRING=\"mongodb+srv://automagicit:n0NUQ6SAYiUbzCko@cluster0.aeue7wa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0\" npx @mongodb-js/mongodb-mcp-server --help)",
       "Bash(npm install:*)",
       "Bash(node:*)",
-      "Bash(MONGODB_CONNECTION_STRING=\"mongodb+srv://automagicit:n0NUQ6SAYiUbzCko@cluster0.aeue7wa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0\" node test-mongodb-connection.js)",
       "Bash(gh project view:*)",
       "Bash(gh repo view:*)",
       "Bash(gh project field-list:*)",
@@ -98,7 +96,6 @@
       "Bash(xset:*)",
       "Bash(setterm:*)",
       "Bash(git switch:*)",
-      "Bash(while [ ! -f /home/mark/dev/automagic-cua/automator/logs/py-api-server.txt ])",
       "Bash(do sleep:*)",
       "Bash(done)",
       "Bash(mongo:*)",
@@ -109,13 +106,14 @@
       "WebFetch(domain:localhost)",
       "Bash(groups)",
       "Bash(who)",
-      "WebFetch(domain:automagic-www-git-www-os-mike-the-automators-projects.vercel.app)",
       "Bash(git remote rename:*)",
       "Bash(git remote add:*)",
       "Bash(git remote:*)",
       "Bash(git filter-branch:*)",
       "Bash(./build.sh:*)",
-      "WebFetch(domain:whytilt.com)"
+      "WebFetch(domain:whytilt.com)",
+      "Bash(git tag:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": []
   }
