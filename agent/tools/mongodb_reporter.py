@@ -20,12 +20,11 @@ class MongoDBReporterTool(BaseAnthropicTool):
     
     def __init__(self):
         super().__init__()
-        self.mongodb_uri = os.getenv('MONGODB_URI')
-        if not self.mongodb_uri:
-            raise ToolError("MONGODB_URI environment variable not set")
+        # Use local MongoDB connection since MongoDB runs in the same container
+        self.mongodb_uri = "mongodb://localhost:27017/tilt"
         
         self.client = MongoClient(self.mongodb_uri)
-        self.db = self.client.get_default_database()
+        self.db = self.client.tilt  # Use 'tilt' database
         self.tasks_collection = self.db.tasks
         
     

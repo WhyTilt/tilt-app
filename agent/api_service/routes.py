@@ -25,10 +25,8 @@ async def chat_stream_options():
 async def chat_completion_stream(request: ChatRequest):
     async def event_stream():
         try:
-            # Get API key and model configuration from environment
-            api_key = os.getenv('ANTHROPIC_API_KEY')
-            if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+            # Get API key from MongoDB and model configuration from environment
+            api_key = get_api_key("anthropic")
             
             # Get model and provider from environment, with defaults
             model = os.getenv('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514')
@@ -234,16 +232,46 @@ async def execute_tool(request: ToolExecuteRequest):
 
 def get_mongodb_connection():
     """Helper function to get MongoDB connection"""
-    import os
     from pymongo import MongoClient
     
-    mongodb_uri = os.getenv('MONGODB_URI')
-    if not mongodb_uri:
-        raise Exception("MONGODB_URI not configured")
+    # Use local MongoDB connection since MongoDB runs in the same container
+    mongodb_uri = "mongodb://localhost:27017/tilt"
     
     client = MongoClient(mongodb_uri)
-    db = client.get_default_database()
+    db = client.tilt  # Use 'tilt' database
     return db.tasks
+
+def get_mongodb_database():
+    """Helper function to get MongoDB database"""
+    from pymongo import MongoClient
+    
+    # Use local MongoDB connection since MongoDB runs in the same container
+    mongodb_uri = "mongodb://localhost:27017/tilt"
+    
+    client = MongoClient(mongodb_uri)
+    return client.tilt  # Use 'tilt' database
+
+def get_api_key(provider: str = "anthropic") -> str:
+    """Get API key from MongoDB"""
+    try:
+        db = get_mongodb_database()
+        api_keys_collection = db.api_keys
+        
+        # Get the single API keys document
+        keys_doc = api_keys_collection.find_one(sort=[("updated_at", -1)])
+        
+        if not keys_doc:
+            raise ValueError(f"No API keys found in database")
+        
+        keys = keys_doc.get("keys", {})
+        api_key = keys.get(provider)
+        
+        if not api_key:
+            raise ValueError(f"{provider} API key not found in database")
+        
+        return api_key
+    except Exception as e:
+        raise ValueError(f"Failed to get {provider} API key: {str(e)}")
 
 @router.get("/tasks")
 async def get_all_tasks():
@@ -678,44 +706,12 @@ async def cleanup_browser():
 async def get_panel_preferences():
     """Get panel preferences from MongoDB"""
     try:
-        import os
-        from pymongo import MongoClient
         from datetime import datetime, timezone
         
-        mongodb_uri = os.getenv('MONGODB_URI')
-        if not mongodb_uri:
-            # Return default preferences if no MongoDB configured
-            return {
-                "preferences": {
-                    "thinking": {
-                        "visible": False,
-                        "position": {"x": 9, "y": 5},
-                        "size": {"width": 400, "height": 300},
-                        "isMaximized": False,
-                        "isLocked": False,
-                    },
-                    "actions": {
-                        "visible": False,
-                        "position": {"x": 1513, "y": 657},
-                        "size": {"width": 400, "height": 300},
-                        "isMaximized": False,
-                        "isLocked": False,
-                    },
-                    "inspector": {
-                        "visible": False,
-                        "position": {"x": 439, "y": 9},
-                        "size": {"width": 500, "height": 400},
-                        "isMaximized": False,
-                        "isLocked": False,
-                    },
-                }
-            }
-        
-        client = MongoClient(mongodb_uri)
-        db = client.get_default_database()
+        db = get_mongodb_database()
         preferences_collection = db.panel_preferences
         
-        # Get the latest preferences document
+        # Get the most recent preferences document
         prefs_doc = preferences_collection.find_one(sort=[("updated_at", -1)])
         
         if not prefs_doc:
@@ -774,7 +770,7 @@ async def get_panel_preferences():
             
             return default_prefs
         
-        return {"preferences": prefs_doc.get("preferences", {})}
+        return {"preferences": prefs_doc.get("preferences", {}), "isFirstRun": False}
         
     except Exception as e:
         return {"error": f"Failed to fetch panel preferences: {str(e)}"}
@@ -783,20 +779,14 @@ async def get_panel_preferences():
 async def save_panel_preferences(request_data: dict):
     """Save panel preferences to MongoDB"""
     try:
-        import os
-        from pymongo import MongoClient
         from datetime import datetime, timezone
         
-        mongodb_uri = os.getenv('MONGODB_URI')
-        if not mongodb_uri:
-            return {"success": True, "message": "No MongoDB configured, preferences not persisted"}
+        db = get_mongodb_database()
         
         preferences = request_data.get("preferences")
         if not preferences:
             return {"error": "Missing preferences data"}
         
-        client = MongoClient(mongodb_uri)
-        db = client.get_default_database()
         preferences_collection = db.panel_preferences
         
         # Create or update preferences document
@@ -816,6 +806,53 @@ async def save_panel_preferences(request_data: dict):
         
     except Exception as e:
         return {"error": f"Failed to save panel preferences: {str(e)}"}
+
+@router.get("/api-keys")
+async def get_api_keys():
+    """Get user API keys from MongoDB"""
+    try:
+        db = get_mongodb_database()
+        api_keys_collection = db.api_keys
+        
+        # Get the single API keys document
+        keys_doc = api_keys_collection.find_one(sort=[("updated_at", -1)])
+        
+        if not keys_doc:
+            return {"api_keys": {}}
+        
+        return {"api_keys": keys_doc.get("keys", {})}
+        
+    except Exception as e:
+        return {"error": f"Failed to fetch API keys: {str(e)}"}
+
+@router.post("/api-keys")
+async def save_api_keys(request_data: dict):
+    """Save user API keys to MongoDB"""
+    try:
+        from datetime import datetime, timezone
+        
+        db = get_mongodb_database()
+        keys = request_data.get("keys", {})
+        
+        api_keys_collection = db.api_keys
+        
+        # Create or update API keys document
+        keys_doc = {
+            "keys": keys,
+            "updated_at": datetime.now(timezone.utc)
+        }
+        
+        # Replace the existing API keys document (we only store one)
+        result = api_keys_collection.replace_one(
+            {},  # Match any document (we only store one)
+            keys_doc,
+            upsert=True  # Create if doesn't exist
+        )
+        
+        return {"success": True, "upserted": result.upserted_id is not None}
+        
+    except Exception as e:
+        return {"error": f"Failed to save API keys: {str(e)}"}
 
 @router.get("/health")
 async def health_check():

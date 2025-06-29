@@ -4,6 +4,7 @@ import { AppProvider } from '@/app/context'
 import { TaskProvider } from '@/app/task/context'
 import { TaskRunnerProvider } from '@/app/task-runner/context'
 import { PanelPreferencesProvider } from '@/app/panel-preferences/context'
+import { ApiKeysProvider } from '@/app/api-keys/context'
 
 export const metadata: Metadata = {
   title: 'Intelligent Desktop - Tilt',
@@ -26,7 +27,9 @@ export default function RootLayout({
           <TaskRunnerProvider>
             <TaskProvider>
               <PanelPreferencesProvider>
-                {children}
+                <ApiKeysProvider>
+                  {children}
+                </ApiKeysProvider>
               </PanelPreferencesProvider>
             </TaskProvider>
           </TaskRunnerProvider>

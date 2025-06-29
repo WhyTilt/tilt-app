@@ -19,6 +19,7 @@ DOCKER_BUILDKIT=1 docker build \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \
     --build-arg WIDTH=1024 \
+    --label dev_mode=$DEV_MODE \
     .
 
 echo "Build completed successfully!"

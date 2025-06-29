@@ -9,6 +9,38 @@ from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
+def get_mongodb_database():
+    """Helper function to get MongoDB database"""
+    from pymongo import MongoClient
+    
+    # Use local MongoDB connection since MongoDB runs in the same container
+    mongodb_uri = "mongodb://localhost:27017/tilt"
+    
+    client = MongoClient(mongodb_uri)
+    return client.tilt  # Use 'tilt' database
+
+def get_api_key(provider: str = "anthropic") -> str:
+    """Get API key from MongoDB"""
+    try:
+        db = get_mongodb_database()
+        api_keys_collection = db.api_keys
+        
+        # Get the single API keys document
+        keys_doc = api_keys_collection.find_one(sort=[("updated_at", -1)])
+        
+        if not keys_doc:
+            raise ValueError(f"No API keys found in database")
+        
+        keys = keys_doc.get("keys", {})
+        api_key = keys.get(provider)
+        
+        if not api_key:
+            raise ValueError(f"{provider} API key not found in database")
+        
+        return api_key
+    except Exception as e:
+        raise ValueError(f"Failed to get {provider} API key: {str(e)}")
+
 
 class TaskModel:
     def __init__(self, data: Dict[str, Any]):
@@ -73,9 +105,11 @@ class TaskModel:
 
 
 class MongoDBConnection:
-    def __init__(self, connection_string: str):
-        self.client = MongoClient(connection_string)
-        self.db = self.client.get_default_database()
+    def __init__(self, connection_string: str = None):
+        # Use local MongoDB connection since MongoDB runs in the same container
+        mongodb_uri = "mongodb://localhost:27017/tilt"
+        self.client = MongoClient(mongodb_uri)
+        self.db = self.client.tilt  # Use 'tilt' database
         self.tasks_collection: Collection = self.db.tasks
         
     def get_next_task(self) -> Optional[TaskModel]:
@@ -149,8 +183,8 @@ class MongoDBConnection:
 
 
 class TaskRunner:
-    def __init__(self, mongodb_uri: str):
-        self.db = MongoDBConnection(mongodb_uri)
+    def __init__(self, mongodb_uri: str = None):
+        self.db = MongoDBConnection()
         self.is_running = False
         self.pause_after_completion = True  # Default to pause for inspection
         
@@ -216,10 +250,8 @@ class TaskRunner:
                 else:
                     logger.debug("API response successful")
             
-            # Get API key and validate
-            api_key = os.getenv('ANTHROPIC_API_KEY')
-            if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+            # Get API key from MongoDB
+            api_key = get_api_key("anthropic")
             
             # Run the sampling loop
             try:
