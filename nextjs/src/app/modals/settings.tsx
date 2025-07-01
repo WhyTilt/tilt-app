@@ -13,6 +13,7 @@ export function SettingsModal({ isOpen, onClose, canClose = true }: SettingsModa
   const { apiKeys, updateApiKey, saveApiKeys, isLoading } = useApiKeys();
   const [localKeys, setLocalKeys] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Initialize local keys when modal opens
@@ -23,18 +24,59 @@ export function SettingsModal({ isOpen, onClose, canClose = true }: SettingsModa
     }
   }, [isOpen, apiKeys, isLoading]);
 
+  const validateApiKey = async (provider: string, apiKey: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/v1/validate-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ provider, apiKey }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return result.valid === true;
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return false;
+    }
+  };
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
       setSaveError(null);
+
+      // Validate Anthropic API key if provided
+      if (localKeys.anthropic && localKeys.anthropic.trim()) {
+        setIsValidating(true);
+        const isValid = await validateApiKey('anthropic', localKeys.anthropic.trim());
+        setIsValidating(false);
+        
+        if (!isValid) {
+          setSaveError('Invalid Anthropic API key or insufficient credits. Please check your key and try again.');
+          return;
+        }
+      }
 
       // Update context with local changes
       Object.entries(localKeys).forEach(([provider, key]) => {
         updateApiKey(provider, key);
       });
 
-      // Save to backend
-      await saveApiKeys();
+      // Save to backend using localKeys directly
+      console.log('Saving API keys:', localKeys);
+      await fetch('/api/v1/api-keys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ keys: localKeys }),
+      });
       
       // Close modal if we now have a valid key or if closing was already allowed
       if (canClose || hasValidAnthropicKey) {
@@ -45,6 +87,7 @@ export function SettingsModal({ isOpen, onClose, canClose = true }: SettingsModa
       console.error('Error saving API keys:', error);
     } finally {
       setIsSaving(false);
+      setIsValidating(false);
     }
   };
 
@@ -101,7 +144,14 @@ export function SettingsModal({ isOpen, onClose, canClose = true }: SettingsModa
                   type="password"
                   placeholder="sk-..."
                   value={localKeys.anthropic || ''}
-                  onChange={(e) => setLocalKeys(prev => ({ ...prev, anthropic: e.target.value }))}
+                  onChange={(e) => {
+                    console.log('Input changed:', e.target.value);
+                    setLocalKeys(prev => {
+                      const newKeys = { ...prev, anthropic: e.target.value };
+                      console.log('New localKeys:', newKeys);
+                      return newKeys;
+                    });
+                  }}
                   className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-lg text-white placeholder-zinc-500 focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 focus:outline-none"
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
@@ -149,10 +199,10 @@ export function SettingsModal({ isOpen, onClose, canClose = true }: SettingsModa
             )}
             <button
               onClick={handleSave}
-              disabled={isSaving || (!canClose && !hasValidAnthropicKey)}
+              disabled={isSaving || isValidating || (!canClose && !hasValidAnthropicKey)}
               className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isValidating ? 'Validating...' : isSaving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>

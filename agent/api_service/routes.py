@@ -255,15 +255,15 @@ def get_api_key(provider: str = "anthropic") -> str:
     """Get API key from MongoDB"""
     try:
         db = get_mongodb_database()
-        api_keys_collection = db.api_keys
+        settings_collection = db.settings
         
-        # Get the single API keys document
-        keys_doc = api_keys_collection.find_one(sort=[("updated_at", -1)])
+        # Get the single settings document
+        settings_doc = settings_collection.find_one(sort=[("updated_at", -1)])
         
-        if not keys_doc:
-            raise ValueError(f"No API keys found in database")
+        if not settings_doc:
+            raise ValueError(f"No settings found in database")
         
-        keys = keys_doc.get("keys", {})
+        keys = settings_doc.get("api_keys", {})
         api_key = keys.get(provider)
         
         if not api_key:
@@ -812,15 +812,15 @@ async def get_api_keys():
     """Get user API keys from MongoDB"""
     try:
         db = get_mongodb_database()
-        api_keys_collection = db.api_keys
+        settings_collection = db.settings
         
-        # Get the single API keys document
-        keys_doc = api_keys_collection.find_one(sort=[("updated_at", -1)])
+        # Get the single settings document
+        settings_doc = settings_collection.find_one(sort=[("updated_at", -1)])
         
-        if not keys_doc:
+        if not settings_doc:
             return {"api_keys": {}}
         
-        return {"api_keys": keys_doc.get("keys", {})}
+        return {"api_keys": settings_doc.get("api_keys", {})}
         
     except Exception as e:
         return {"error": f"Failed to fetch API keys: {str(e)}"}
@@ -834,18 +834,26 @@ async def save_api_keys(request_data: dict):
         db = get_mongodb_database()
         keys = request_data.get("keys", {})
         
-        api_keys_collection = db.api_keys
+        settings_collection = db.settings
         
-        # Create or update API keys document
-        keys_doc = {
-            "keys": keys,
+        # Get existing settings or create new
+        existing_settings = settings_collection.find_one(sort=[("updated_at", -1)]) or {}
+        
+        # Update with new API keys
+        settings_doc = {
+            **existing_settings,
+            "api_keys": keys,
             "updated_at": datetime.now(timezone.utc)
         }
         
-        # Replace the existing API keys document (we only store one)
-        result = api_keys_collection.replace_one(
+        # Remove _id if it exists to avoid conflicts
+        if "_id" in settings_doc:
+            del settings_doc["_id"]
+        
+        # Replace the existing settings document (we only store one)
+        result = settings_collection.replace_one(
             {},  # Match any document (we only store one)
-            keys_doc,
+            settings_doc,
             upsert=True  # Create if doesn't exist
         )
         
@@ -853,6 +861,63 @@ async def save_api_keys(request_data: dict):
         
     except Exception as e:
         return {"error": f"Failed to save API keys: {str(e)}"}
+
+@router.post("/validate-api-key")
+async def validate_api_key(request_data: dict):
+    """Validate an API key by sending a test request"""
+    try:
+        import aiohttp
+        
+        provider = request_data.get("provider")
+        api_key = request_data.get("api_key")
+        
+        if not provider or not api_key:
+            return {"error": "Provider and API key are required"}
+        
+        if provider == "anthropic":
+            # Test the Anthropic API key with a minimal request
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-API-Key": api_key,
+                    "anthropic-version": "2023-06-01"
+                }
+                
+                payload = {
+                    "model": "claude-3-haiku-20240307",
+                    "max_tokens": 10,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "Hi"
+                        }
+                    ]
+                }
+                
+                async with session.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers=headers,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        is_valid = result and result.get("content") and len(result["content"]) > 0
+                        return {"valid": is_valid, "provider": provider}
+                    elif response.status == 401:
+                        return {"valid": False, "provider": provider, "error": "Invalid API key - authentication failed"}
+                    elif response.status == 403:
+                        return {"valid": False, "provider": provider, "error": "API key lacks required permissions or insufficient credits"}
+                    elif response.status == 429:
+                        return {"valid": True, "provider": provider, "warning": "Rate limited - key is valid but being throttled"}
+                    else:
+                        error_text = await response.text()
+                        return {"valid": False, "provider": provider, "error": f"API error: {error_text}"}
+        
+        return {"error": f"Validation not implemented for provider: {provider}"}
+        
+    except Exception as e:
+        return {"error": f"Validation failed: {str(e)}"}
 
 @router.get("/health")
 async def health_check():

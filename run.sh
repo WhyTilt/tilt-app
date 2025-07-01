@@ -53,12 +53,25 @@ if [ "$FORCE_REBUILD" = "true" ] || [ ! -n "$IMAGE_EXISTS" ]; then
             echo "Building Docker image in development mode (skipping Next.js build)..."
             docker build --build-arg DEV_MODE=true --label dev_mode=true -t tilt .
         else
-            echo "Building Docker image in production mode..."
+            echo "Building Docker image in production mode (includes Next.js build)..."
             docker build --build-arg DEV_MODE=false --label dev_mode=false -t tilt .
         fi
     fi
 else
     echo "Using existing Docker image (mode: $EXISTING_DEV_MODE)"
+    echo "FORCE REBUILDING because API code changed..."
+    if [ -f "./build.sh" ]; then
+        echo "Running build script..."
+        ./build.sh $DEV_MODE
+    elif [ -f "Dockerfile" ]; then
+        if [ "$DEV_MODE" = "true" ]; then
+            echo "Building Docker image in development mode (skipping Next.js build)..."
+            docker build --build-arg DEV_MODE=true --label dev_mode=true -t tilt .
+        else
+            echo "Building Docker image in production mode (includes Next.js build)..."
+            docker build --build-arg DEV_MODE=false --label dev_mode=false -t tilt .
+        fi
+    fi
 fi
 
 # Set up Docker environment variables

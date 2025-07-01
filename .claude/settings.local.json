@@ -113,7 +113,9 @@
       "Bash(./build.sh:*)",
       "WebFetch(domain:whytilt.com)",
       "Bash(git tag:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(docker system prune:*)",
+      "Bash(DOCKER_BUILDKIT=1 docker build --no-cache --target app --tag tilt --build-arg DEV_MODE=false --build-arg DISPLAY_NUM=1 --build-arg HEIGHT=768 --build-arg WIDTH=1024 --label dev_mode=false .)"
     ],
     "deny": []
   }

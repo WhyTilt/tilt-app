@@ -54,8 +54,8 @@ export function TaskExecutionReportModal({ task, isOpen, onClose }: TaskExecutio
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-zinc-900 border border-zinc-600 rounded-lg w-[90vw] max-w-4xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-zinc-900 bg-opacity-95">
+      <div className="bg-zinc-900 border border-zinc-600 rounded-lg w-[90vw] max-w-4xl h-[100vh] overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-600 bg-zinc-800">
           <h3 className="text-lg font-medium text-white">
@@ -72,7 +72,7 @@ export function TaskExecutionReportModal({ task, isOpen, onClose }: TaskExecutio
         </div>
         
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto h-[calc(100vh-120px)]">
           {/* Task Info */}
           <div className="mb-6">
             <h4 className="text-md font-medium text-white mb-2">Task Information</h4>
