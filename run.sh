@@ -26,17 +26,32 @@ if [ -f ".env.local" ]; then
     export $(grep -v '^#' .env.local | xargs)
 fi
 
-# Build if needed (check if Dockerfile is newer than any existing image)
-if [ -f "./build.sh" ]; then
-    echo "Running build script..."
-    ./build.sh $DEV_MODE
-elif [ -f "Dockerfile" ]; then
-    if [ "$DEV_MODE" = "true" ]; then
+# Determine which image to use
+IMAGE_NAME="tilt:latest"
+
+if [ "$DEV_MODE" = "true" ]; then
+    echo "Development mode: building locally..."
+    if [ -f "./build.sh" ]; then
+        echo "Running build script..."
+        ./build.sh $DEV_MODE
+    elif [ -f "Dockerfile" ]; then
         echo "Building Docker image in development mode (skipping Next.js build)..."
         docker build --build-arg DEV_MODE=true -t tilt .
+    fi
+else
+    echo "Production mode: trying to pull from Docker Hub..."
+    if docker pull whytilt/tilt:latest 2>/dev/null; then
+        echo "✅ Using Docker Hub image: whytilt/tilt:latest"
+        IMAGE_NAME="whytilt/tilt:latest"
     else
-        echo "Building Docker image in production mode..."
-        docker build --build-arg DEV_MODE=false -t tilt .
+        echo "❌ Failed to pull from Docker Hub, building locally..."
+        if [ -f "./build.sh" ]; then
+            echo "Running build script..."
+            ./build.sh $DEV_MODE
+        elif [ -f "Dockerfile" ]; then
+            echo "Building Docker image in production mode..."
+            docker build --build-arg DEV_MODE=false -t tilt .
+        fi
     fi
 fi
 
@@ -73,7 +88,7 @@ docker run \
     -p 3001:3001 \
     -p 6080:6080 \
     -p 8000:8000 \
-    -it tilt:latest
+    -it $IMAGE_NAME
 
 echo ""
 echo "➡️  Open http://localhost:3001 for Tilt"

@@ -27,3 +27,12 @@ class ToolExecuteRequest(BaseModel):
 class ToolExecuteResponse(BaseModel):
     result: Dict[str, Any]
     error: Optional[str] = None
+
+class ConfigRequest(BaseModel):
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+
+class ConfigResponse(BaseModel):
+    is_configured: bool
+    model: str
+    message: Optional[str] = None

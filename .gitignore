@@ -29,3 +29,6 @@ db_data/
 .next/
 **/.next/
 nextjs/.next/
+
+# Claude configuration files (should not be in repository)
+.claude/

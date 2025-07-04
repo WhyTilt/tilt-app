@@ -80,22 +80,28 @@ RUN usermod -aG sudo mongodb && \
 # Stage 3: User applications layer
 FROM system-packages AS user-apps
 
-# Install Google Chrome (which includes Chromium functionality)
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
+# Install browser based on architecture
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+        apt-get update && \
+        apt-get install -y --no-install-recommends google-chrome-stable && \
+        ln -sf /usr/bin/google-chrome /usr/bin/chromium && \
+        ln -sf /usr/bin/google-chrome /usr/bin/chromium-browser; \
+    else \
+        apt-get update && \
+        apt-get install -y --no-install-recommends chromium-browser && \
+        ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome && \
+        ln -sf /usr/bin/chromium-browser /usr/bin/chromium; \
+    fi && \
     apt-get install -y --no-install-recommends \
-    google-chrome-stable \
     x11-apps \
     xpdf \
     tint2 \
     pcmanfm \
     unzip && \
     apt-get clean
-
-# Create chromium-browser symlink to google-chrome for compatibility
-RUN ln -sf /usr/bin/google-chrome /usr/bin/chromium && \
-    ln -sf /usr/bin/google-chrome /usr/bin/chromium-browser
 
 # Install noVNC
 RUN git clone --branch v1.5.0 https://github.com/novnc/noVNC.git /opt/noVNC && \

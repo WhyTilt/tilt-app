@@ -15,6 +15,7 @@ import {
 import { FloatingPanel } from './bottom-panel/floating-panel';
 import { LogPanel } from './bottom-panel/log-panel';
 import { TaskRunnerPanel } from './bottom-panel/task-runner-panel';
+import { ApiKeyModal } from './modals/api-key-modal';
 
 export default function Home() {
   const { 
@@ -51,9 +52,33 @@ export default function Home() {
   const [taskRunnerMode, setTaskRunnerMode] = useState<'minimized' | 'default' | 'maximized'>('maximized');
   const [showLogPanel, setShowLogPanel] = useState(false);
   const [isAgentStarting, setIsAgentStarting] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
   
   // Panel preferences from context
   const { preferences, updatePanelState } = usePanelPreferences();
+
+  // Check API key configuration on mount
+  useEffect(() => {
+    const checkApiKeyStatus = async () => {
+      try {
+        const response = await fetch('/api/v1/config');
+        const data = await response.json();
+        setIsApiKeyConfigured(data.is_configured);
+        
+        // Show modal automatically if no API key is configured
+        if (!data.is_configured) {
+          setShowApiKeyModal(true);
+        }
+      } catch (error) {
+        console.error('Failed to check API key status:', error);
+        // Show modal on error to be safe
+        setShowApiKeyModal(true);
+      }
+    };
+    
+    checkApiKeyStatus();
+  }, []);
 
 
   // Handle initial loading - only on page load
@@ -289,9 +314,21 @@ export default function Home() {
   return (
     <div className="relative h-screen flex flex-col" style={{ backgroundColor: '#18181b' }}>
 
-      {/* Current Task Label - Top Right */}
+      {/* Settings Gear Icon - Top Right */}
+      <button
+        onClick={() => setShowApiKeyModal(true)}
+        className="fixed top-4 right-4 z-50 p-2 hover:bg-zinc-700/30 rounded transition-colors"
+        title="API Key Settings"
+      >
+        <svg className="w-5 h-5 text-zinc-300 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
+      {/* Current Task Label */}
       {currentRunningTask?.label && (
-        <div className="fixed top-4 right-4 z-50 flex items-center bg-zinc-800/20 backdrop-blur-sm rounded-lg p-2 border border-zinc-600/30">
+        <div className="fixed top-4 right-16 z-50 flex items-center bg-zinc-800/20 backdrop-blur-sm rounded-lg p-2 border border-zinc-600/30">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
             <span className="text-white font-medium text-sm">{currentRunningTask.label}</span>
@@ -578,6 +615,16 @@ export default function Home() {
           </button>
         )}
       </div>
+
+      {/* API Key Modal */}
+      <ApiKeyModal
+        isVisible={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        onApiKeySaved={() => {
+          setIsApiKeyConfigured(true);
+          setShowApiKeyModal(false);
+        }}
+      />
 
     </div>
   );

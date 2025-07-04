@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Install Tilt - Advanced Computer Automation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+            background: #0f0f23;
+            color: #cccccc;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .install-box {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .install-command {
+            background: #0f3460;
+            color: #00ff88;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 1.1rem;
+            word-break: break-all;
+            border: 1px solid #16213e;
+        }
+        .copy-btn {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .copy-btn:hover {
+            background: #e55a2b;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+        .feature {
+            background: #1a1a2e;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .feature h3 {
+            color: #ff6b35;
+            margin-top: 0;
+        }
+        .requirements {
+            background: #2a1810;
+            border: 1px solid #4a2818;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .requirements h3 {
+            color: #f7931e;
+            margin-top: 0;
+        }
+        a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .platform-icons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+            font-size: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🚀 Tilt</div>
+        <p>Advanced Computer Automation powered by Claude Sonnet 4</p>
+        <div class="platform-icons">
+            <span title="Linux">🐧</span>
+            <span title="macOS">🍎</span>
+            <span title="Windows">🪟</span>
+        </div>
+    </div>
+
+    <div class="install-box">
+        <h2>🎯 One-Command Install</h2>
+        <div class="install-command" id="install-command">
+            curl -sSL install.whytilt.com | bash
+        </div>
+        <button class="copy-btn" onclick="copyCommand()">📋 Copy Command</button>
+    </div>
+
+    <div class="requirements">
+        <h3>📋 Requirements</h3>
+        <ul>
+            <li><strong>Docker</strong> - Will be installed automatically if missing</li>
+            <li><strong>Anthropic API Key</strong> - <a href="https://console.anthropic.com/" target="_blank">Get one here</a></li>
+            <li><strong>4GB RAM</strong> - Minimum system requirement</li>
+            <li><strong>Internet Connection</strong> - For Docker image download</li>
+        </ul>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <h3>🤖 AI-Powered</h3>
+            <p>Natural language automation with Claude Sonnet 4. Describe what you want in plain English.</p>
+        </div>
+        <div class="feature">
+            <h3>🖥️ Visual Desktop</h3>
+            <p>Full Ubuntu desktop with VNC access. Watch your automation in real-time.</p>
+        </div>
+        <div class="feature">
+            <h3>🌐 Web Interface</h3>
+            <p>Beautiful Next.js frontend with real-time streaming and task management.</p>
+        </div>
+        <div class="feature">
+            <h3>🔧 Tool System</h3>
+            <p>Extensible automation tools: browser control, JavaScript execution, network monitoring.</p>
+        </div>
+        <div class="feature">
+            <h3>📊 Analytics</h3>
+            <p>Built-in monitoring for Google Analytics, Adobe Analytics, and custom tracking.</p>
+        </div>
+        <div class="feature">
+            <h3>💾 Persistent Data</h3>
+            <p>MongoDB storage with task history, results, and user data persistence.</p>
+        </div>
+    </div>
+
+    <div class="install-box">
+        <h2>🚀 Quick Start</h2>
+        <ol>
+            <li>Run the install command above</li>
+            <li>Enter your Anthropic API key when prompted</li>
+            <li>Wait for Docker image download (~2GB)</li>
+            <li>Access Tilt at <strong>http://localhost:3001</strong></li>
+        </ol>
+    </div>
+
+    <div class="install-box">
+        <h2>🎮 Commands</h2>
+        <div style="font-family: monospace; background: #0f3460; padding: 1rem; border-radius: 4px;">
+            <div style="margin: 0.5rem 0;"><span style="color: #00ff88;">tilt</span> <span style="color: #cccccc;"># Start Tilt</span></div>
+            <div style="margin: 0.5rem 0;"><span style="color: #00ff88;">tilt stop</span> <span style="color: #cccccc;"># Stop Tilt</span></div>
+            <div style="margin: 0.5rem 0;"><span style="color: #00ff88;">tilt update</span> <span style="color: #cccccc;"># Update to latest</span></div>
+            <div style="margin: 0.5rem 0;"><span style="color: #00ff88;">tilt help</span> <span style="color: #cccccc;"># Show help</span></div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 3rem 0; padding: 2rem; background: #1a1a2e; border-radius: 8px;">
+        <h3>🌐 Access URLs</h3>
+        <p><strong>Frontend:</strong> <a href="http://localhost:3001">http://localhost:3001</a></p>
+        <p><strong>API:</strong> <a href="http://localhost:8000">http://localhost:8000</a></p>
+        <p><strong>Desktop:</strong> <a href="http://localhost:6080/vnc.html">http://localhost:6080/vnc.html</a></p>
+        <p><strong>VNC:</strong> vnc://localhost:5900</p>
+    </div>
+
+    <div style="text-align: center; margin: 3rem 0;">
+        <p>
+            <a href="https://whytilt.com">🏠 Website</a> | 
+            <a href="https://github.com/WhyTilt/tilt-app">📚 Documentation</a> | 
+            <a href="https://github.com/WhyTilt/tilt-app/issues">🐛 Issues</a>
+        </p>
+        <p style="color: #666; margin-top: 2rem;">
+            Made with ❤️ by the Tilt team
+        </p>
+    </div>
+
+    <script>
+        function copyCommand() {
+            const command = document.getElementById('install-command').textContent;
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#ff6b35';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
