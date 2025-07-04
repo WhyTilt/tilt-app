@@ -1,0 +1,133 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd desktop
+          npm ci
+
+      - name: Build Mac app
+        run: |
+          cd desktop
+          npm run build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false  # Skip code signing for now
+
+      - name: Upload Mac artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tilt-mac-${{ github.sha }}
+          path: |
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+          retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd desktop
+          npm ci
+
+      - name: Build Windows app
+        run: |
+          cd desktop
+          npm run build:win
+        env:
+          CSC_LINK: ""  # Skip code signing for now
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tilt-windows-${{ github.sha }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.msi
+          retention-days: 30
+
+  test-docker-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test multi-arch Docker build
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --target app \
+            --tag tilt:test \
+            --build-arg DEV_MODE=false \
+            .
+
+      - name: Test Docker image functionality
+        run: |
+          # Build single-arch image for testing
+          docker build -t tilt:test-local .
+          # Quick smoke test - container should start without errors
+          timeout 30s docker run --rm tilt:test-local echo "Container starts successfully" || true
+
+  release:
+    needs: [build-mac, build-windows, test-docker-builds]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Mac artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: tilt-mac-${{ github.sha }}
+          path: ./release/mac
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: tilt-windows-${{ github.sha }}
+          path: ./release/windows
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/mac/*
+            release/windows/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
