@@ -63,7 +63,8 @@ class ApiClient {
 
   async sendChatStream(
     request: ChatRequest,
-    onEvent: (event: StreamEvent) => void
+    onEvent: (event: StreamEvent) => void,
+    abortSignal?: AbortSignal
   ): Promise<void> {
     const response = await fetch(`/api/v1/chat/stream`, {
       method: 'POST',
@@ -71,6 +72,7 @@ class ApiClient {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
+      signal: abortSignal,
     });
 
     if (!response.ok) {

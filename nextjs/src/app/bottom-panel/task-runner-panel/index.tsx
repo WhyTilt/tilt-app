@@ -85,6 +85,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
   const [isProcessingNextTask, setIsProcessingNextTask] = useState(false);
   const [initialQueueSize, setInitialQueueSize] = useState(0); // Track initial queue size to determine execution mode
   const [lastJsCode, setLastJsCode] = useState<string>(''); // Store the last JavaScript code executed
+  const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null); // Track current stream abort controller
   
   // Use external mode if provided, otherwise use internal state
   const panelMode = externalPanelMode || internalPanelMode;
@@ -434,6 +435,10 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       console.log('🔥 TYPEOF apiClient.sendChatStream:', typeof apiClient.sendChatStream);
       
       try {
+        // Create abort controller for this stream
+        const abortController = new AbortController();
+        setCurrentAbortController(abortController);
+        
         console.log('🔥 CALLING apiClient.sendChatStream...');
         await apiClient.sendChatStream({
           messages: messagesForApi,
@@ -829,11 +834,20 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
             console.log('🔥 Stream completed');
             break;
         }
-        });
+        }, abortController.signal);
         
         console.log('🔥 sendChatStream completed successfully');
+        setCurrentAbortController(null);
       } catch (error) {
         console.error('🔥 ERROR in sendChatStream call:', error);
+        setCurrentAbortController(null);
+        
+        // Check if this was a user-initiated abort
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('🔥 Stream was aborted by user');
+          return; // Don't re-throw abort errors as they're expected
+        }
+        
         throw error;
       }
 
@@ -991,6 +1005,9 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
         isBatchRun,
         isProcessingNextTask
       });
+      
+      // Clean up abort controller
+      setCurrentAbortController(null);
       
       setIsLoading(false);
       streamingMessageRef.current = '';
@@ -1276,6 +1293,13 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
 
   // Stop current task
   const stopCurrentTask = async () => {
+    // First, abort the ongoing API stream if it exists
+    if (currentAbortController) {
+      console.log('🔥 Aborting current API stream...');
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
+    
     if (currentTask) {
       try {
         await fetch(`${API_BASE_URL}/tasks/${currentTask.id}/stop`, {
