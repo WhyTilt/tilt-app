@@ -1,48 +1,63 @@
-# Tilt Small Business License 1.0.0
+# Tilt Dual License 1.0.0
 
-## Acceptance
+## License Terms
 
+This software is available under two licensing options:
+
+### 1. Small Business License
+
+**Permitted Use**: Companies with fewer than 50 employees AND less than $250,000 USD in annual revenue may use this software under the following terms:
+
+#### Acceptance
 In order to get any license under these terms, you must agree to them as both strict obligations and conditions to all your licenses.
 
-## Copyright License
-
+#### Copyright License
 The licensor grants you a copyright license for the software to do everything you might do with the software that would otherwise infringe the licensor's copyright in it for any permitted purpose. However, you may only distribute the software according to Distribution License and make changes or new works based on the software according to Changes and New Works License.
 
-## Distribution License
-
+#### Distribution License
 The licensor grants you an additional copyright license to distribute copies of the software. Your license to distribute covers distributing the software with changes and new works permitted by Changes and New Works License.
 
-## Notices
-
+#### Notices
 You must ensure that anyone who gets a copy of any part of the software from you also gets a copy of these terms, as well as copies of any plain-text lines beginning with `Required Notice:` that the licensor provided with the software.
 
-## Changes and New Works License
-
+#### Changes and New Works License
 The licensor grants you an additional copyright license to make changes and new works based on the software for any permitted purpose.
 
-## Patent License
-
+#### Patent License
 The licensor grants you a patent license for the software that covers patent claims the licensor can license, or becomes able to license, that you would infringe by using the software.
 
-## Fair Use
-
+#### Fair Use
 You may have "fair use" rights for the software under the law. These terms do not limit them.
 
-## Small Business
-
-Use of the software for the benefit of your company is use for a permitted purpose if your company has fewer than 50 total individuals working as employees and independent contractors, and less than 250,000 USD total revenue in the prior tax year.
-
-## No Other Rights
-
-These terms do not allow you to sublicense or transfer any of your licenses to anyone else, or prevent the licensor from granting licenses to anyone else. These terms do not imply any other licenses.
-
-## Patent Defense
-
+#### Patent Defense
 If you make any written claim that the software infringes or contributes to infringement of any patent, your patent license for the software granted under these terms ends immediately. If your company makes such a claim, your patent license ends immediately for work on behalf of your company.
 
-## Violations
-
+#### Violations
 The first time you are notified in writing that you have violated any of these terms, or done anything with the software not covered by your licenses, your licenses can nonetheless continue if you come into full compliance with these terms, and take practical steps to correct past violations, within 32 days of receiving notice. Otherwise, all your licenses end immediately.
+
+### 2. Enterprise License
+
+**Required for**: Companies with 50+ employees OR $250,000+ annual revenue
+
+Enterprise users must obtain a separate commercial license after one (1) year of use. During the first year, enterprise users may use the software under the Small Business License terms above.
+
+After the first year, enterprise users must:
+- Contact hello@whytilt.com to negotiate a per-seat license
+- Agree to commercial terms and pricing
+- Maintain valid commercial license for continued use
+
+**Pricing**: Commercial license pricing may change at any time during the market fit discovery phase. Current users will be notified of pricing changes with 30 days advance notice.
+
+## Important Restrictions
+
+### Tilt Inference Server
+If any copy of this software includes calls to the Tilt inference server, you may NOT:
+- Remove these calls
+- Replace these calls with alternatives
+- Modify these calls in any way
+- Disable these calls
+
+Violation of this restriction will result in immediate license termination.
 
 ## No Liability
 
@@ -62,4 +77,4 @@ The **licensor** is the individual or entity offering these terms, and the **sof
 
 ---
 
-**Note**: This license does not grant permission to use any associated machine learning models, weights, or datasets unless separately licensed. Commercial use by organizations with 50 or more employees or $250,000+ annual revenue requires a separate commercial license.
+**Note**: This license does not grant permission to use any associated machine learning models, weights, or datasets unless separately licensed.
