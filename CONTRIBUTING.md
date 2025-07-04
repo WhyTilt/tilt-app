@@ -73,7 +73,7 @@ The project includes several development aids:
 
 - **Pre-commit hooks**: Automated code formatting and linting
 - **Hot reloading**: Both backend and frontend support live reloading
-- **Comprehensive logging**: Debug with detailed logs in `/home/computeragent/logs/`
+- **Comprehensive logging**: Debug with detailed logs in `/home/tilt/logs/`
 
 ## How to Contribute
 
@@ -266,7 +266,7 @@ When reporting bugs, please include:
 - **Steps to reproduce** the problem
 - **Expected vs actual behavior**
 - **Environment details** (OS, Docker version, etc.)
-- **Log outputs** from `/home/computeragent/logs/`
+- **Log outputs** from `/home/tilt/logs/`
 - **Screenshots or videos** if relevant
 
 ### Feature Requests

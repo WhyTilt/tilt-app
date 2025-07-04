@@ -181,7 +181,7 @@ We need some work here :D
 - **Resolution**: Use 1024x768 for optimal AI performance
 - **Memory**: Minimum 4GB RAM, 8GB recommended for complex workflows
 - **Storage**: Persistent data in `user_data/` directory
-- **Logging**: Comprehensive logs in `/home/computeragent/logs/`
+- **Logging**: Comprehensive logs in `/home/tilt/logs/`
 
 ## Troubleshooting
 

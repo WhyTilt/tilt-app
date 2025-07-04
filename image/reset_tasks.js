@@ -4,8 +4,8 @@
 
 print("Starting task reset script...");
 
-// Use the database where tasks are actually stored
-use('database');
+// Use the tilt database
+use('tilt');
 
 // Reset all tasks to pending status
 print("Resetting all task statuses to pending...");

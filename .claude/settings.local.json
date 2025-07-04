@@ -113,7 +113,10 @@
       "Bash(./build.sh:*)",
       "WebFetch(domain:whytilt.com)",
       "Bash(git tag:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(docker system prune:*)",
+      "Bash(docker restart:*)",
+      "Bash(chown:*)"
     ],
     "deny": []
   }

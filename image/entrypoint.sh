@@ -5,7 +5,7 @@ set -e
 echo "Starting MongoDB..."
 sudo mkdir -p /data/db
 sudo chown -R mongodb:mongodb /data/db
-sudo cp ./mongod.conf /tmp/mongod.conf
+sudo cp ./image/mongod.conf /tmp/mongod.conf
 sudo chown mongodb:mongodb /tmp/mongod.conf
 sudo -u mongodb mongod --config /tmp/mongod.conf
 
@@ -22,14 +22,20 @@ done
 
 # Initialize database and collections
 echo "Initializing MongoDB database..."
-mongosh < ./init_mongodb.js > /dev/null 2>&1
+mongosh < ./image/init_mongodb.js > /dev/null 2>&1
 
 # Reset all tasks and app state to idle
 echo "Resetting tasks and app state..."
-mongosh < ./reset_tasks.js > /dev/null 2>&1
+mongosh < ./image/reset_tasks.js > /dev/null 2>&1
 
-./start_all.sh
-./novnc_startup.sh
+# Copy config files from mounted image directory
+echo "Setting up config files..."
+cp -r ./image/.config/* ~/.config/ 2>/dev/null || true
+# Only chown files we actually copied, not mounted volumes
+find ~/.config/ -maxdepth 1 -name "tint2" -exec chown -R tilt:tilt {} \; 2>/dev/null || true
+
+./image/start_all.sh
+./image/novnc_startup.sh
 
 
 # Keep the container running

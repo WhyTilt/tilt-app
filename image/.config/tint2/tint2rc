@@ -61,12 +61,12 @@ launcher_tooltip = 1
 # Launcher icon
 # Desktop icons. Do not delete the commented-out lines below. They are preserved for easy re-enabling.
 #launcher_item_app = /usr/share/applications/libreoffice-calc.desktop
-launcher_item_app = /home/computeragent/.config/tint2/applications/terminal.desktop
-launcher_item_app = /home/computeragent/.config/tint2/applications/chrome-custom.desktop
-#launcher_item_app = /home/computeragent/.config/tint2/applications/firefox-custom.desktop
+launcher_item_app = /home/tilt/.config/tint2/applications/terminal.desktop
+launcher_item_app = /home/tilt/.config/tint2/applications/chrome-custom.desktop
+#launcher_item_app = /home/tilt/.config/tint2/applications/firefox-custom.desktop
 #launcher_item_app = /usr/share/applications/xpaint.desktop
 #launcher_item_app = /usr/share/applications/xpdf.desktop
-#launcher_item_app = /home/computeragent/.config/tint2/applications/gedit.desktop
+#launcher_item_app = /home/tilt/.config/tint2/applications/gedit.desktop
 #launcher_item_app = /usr/share/applications/galculator.desktop
 
 #-------------------------------------

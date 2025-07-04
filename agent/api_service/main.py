@@ -24,13 +24,13 @@ app.include_router(router, prefix="/api/v1")
 
 # Configure logging
 import os
-os.makedirs('/home/computeragent/logs', exist_ok=True)
+os.makedirs('/home/tilt/logs', exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler('/home/computeragent/logs/api-detailed.log')
+        logging.FileHandler('/home/tilt/logs/api-detailed.log')
     ]
 )
 

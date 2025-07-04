@@ -71,14 +71,10 @@ TOOL_GROUPS_BY_VERSION = {
 
 **Required Environment Variables:**
 - `ANTHROPIC_API_KEY`: Claude API access
-- `MONGODB_URI`: Database connection string  
-- `API_PROVIDER`: anthropic/bedrock/vertex (default: anthropic)
-- `ANTHROPIC_MODEL`: Model selection (default: claude-sonnet-4-20250514)
 
 **Port Configuration:**
 - 3001: Next.js frontend (dev)
 - 8000: FastAPI backend
-- 8080: Combined interface (production)
 - 5900: VNC server
 - 6080: noVNC web client
 - 27017: MongoDB
@@ -121,11 +117,9 @@ src/app/
 }
 ```
 
-**Variable Substitution:** Tasks support parameterization with `{URL}`, `{MONGODB_URI}`, etc.
-
 ## Debugging & Logging
 
-**Log Files:** `/home/computeragent/logs/`
+**Log Files:** `/home/tilt/logs/`
 - `api-detailed.log`: Complete API and tool execution logs
 - `py-api-server.txt`: Server startup and HTTP request logs
 - `tools.txt`: Dedicated tool execution logging

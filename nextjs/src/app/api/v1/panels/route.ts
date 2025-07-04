@@ -50,11 +50,6 @@ const DEFAULT_PREFERENCES: PanelPreferences = {
 
 export async function GET() {
   try {
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      return NextResponse.json({ preferences: DEFAULT_PREFERENCES });
-    }
-
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/panels`, {
       method: 'GET',
       headers: {
@@ -82,11 +77,6 @@ export async function POST(request: NextRequest) {
 
     if (!preferences) {
       return NextResponse.json({ error: 'Missing preferences' }, { status: 400 });
-    }
-
-    const mongoUri = process.env.MONGODB_URI;
-    if (!mongoUri) {
-      return NextResponse.json({ success: true, message: 'No MongoDB configured, preferences not persisted' });
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/panels`, {

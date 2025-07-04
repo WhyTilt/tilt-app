@@ -117,11 +117,6 @@ export function VariableInputModal({
                       Example: http://172.17.0.1:3000
                     </p>
                   )}
-                  {variable === 'MONGODB_URI' && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      MongoDB connection string with credentials
-                    </p>
-                  )}
                 </div>
               ))}
             </div>

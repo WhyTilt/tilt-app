@@ -3,36 +3,36 @@
 set -e
 
 # Create logs directory using absolute path
-LOGS_DIR="/home/computeragent/logs"
+LOGS_DIR="/home/tilt/logs"
 mkdir -p "$LOGS_DIR"
 
-cd /home/computeragent
+cd /home/tilt
 
 export DISPLAY=:${DISPLAY_NUM}
 echo "Starting desktop environment..."
 
 # Start Xvfb first and wait for it to be ready
 echo "Starting Xvfb..." | tee -a "$LOGS_DIR/startup.log"
-./xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log" &
+./image/xvfb_startup.sh 2>&1 | tee -a "$LOGS_DIR/xvfb.log" &
 
 # Start window manager
 echo "Starting window manager..." | tee -a "$LOGS_DIR/startup.log"
-./mutter_startup.sh 2>&1 | tee -a "$LOGS_DIR/mutter.log" &
+./image/mutter_startup.sh 2>&1 | tee -a "$LOGS_DIR/mutter.log" &
 
 # Start tint2 panel
 echo "Starting tint2 panel..." | tee -a "$LOGS_DIR/startup.log"
-./tint2_startup.sh 2>&1 | tee -a "$LOGS_DIR/tint2.log" &
+./image/tint2_startup.sh 2>&1 | tee -a "$LOGS_DIR/tint2.log" &
 
 # Wait a moment for desktop components to initialize
 sleep 3
 
 # Start x11vnc (depends on Xvfb being ready)
 echo "Starting x11vnc..." | tee -a "$LOGS_DIR/startup.log"
-./x11vnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/x11vnc.log" &
+./image/x11vnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/x11vnc.log" &
 
 # Start noVNC (depends on x11vnc)
 echo "Starting noVNC..." | tee -a "$LOGS_DIR/startup.log"
-./novnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/novnc.log" &
+./image/novnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/novnc.log" &
 
 # Wait for VNC to be ready
 sleep 2
@@ -42,24 +42,26 @@ echo "MongoDB already running from entrypoint.sh..." | tee -a "$LOGS_DIR/startup
 
 # Start Python API service with logging
 echo "Starting Python API service..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/computeragent
-export PYTHONPATH=/home/computeragent:$PYTHONPATH
+cd /home/tilt
+export PYTHONPATH=/home/tilt:$PYTHONPATH
 python -m agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
 API_PID=$!
 
-# Start Next.js app on port 8080 (main interface) with logging
+# Start Next.js app on port 3001 (main interface) with logging
 echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/computeragent/nextjs
+cd /home/tilt/nextjs
+
+# Ensure .next directory exists with correct permissions
+sudo mkdir -p .next && sudo chown -R tilt:tilt .next
 
 # Check if running in development mode
 if [ "$DEV_MODE" = "true" ]; then
     echo "Running Next.js in development mode with hot reloading..." | tee -a "$LOGS_DIR/startup.log"
-    # Ensure .next directory exists with correct permissions for development mode
-    sudo mkdir -p .next && sudo chown -R computeragent:computeragent .next
-    PORT=8080 npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+    npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
-    PORT=8080 npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+    npm run build 2>&1 | tee -a "$LOGS_DIR/nextjs-build.txt"
+    npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 fi
 NEXTJS_PID=$!
 

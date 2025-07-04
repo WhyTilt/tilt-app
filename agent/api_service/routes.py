@@ -237,12 +237,9 @@ def get_mongodb_connection():
     import os
     from pymongo import MongoClient
     
-    mongodb_uri = os.getenv('MONGODB_URI')
-    if not mongodb_uri:
-        raise Exception("MONGODB_URI not configured")
-    
-    client = MongoClient(mongodb_uri)
-    db = client.get_default_database()
+    # MongoDB is always running locally on the container
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client.tilt
     return db.tasks
 
 @router.get("/tasks")
@@ -617,7 +614,7 @@ async def cleanup_browser():
         # Clear browser temp files and cache
         temp_paths = [
             "/tmp/.mozilla",
-            "/home/computeragent/.cache/mozilla"
+            "/home/tilt/.cache/mozilla"
         ]
         
         for path in temp_paths:
@@ -682,9 +679,12 @@ async def get_panel_preferences():
         from pymongo import MongoClient
         from datetime import datetime, timezone
         
-        mongodb_uri = os.getenv('MONGODB_URI')
-        if not mongodb_uri:
-            # Return default preferences if no MongoDB configured
+        # MongoDB is always running locally on the container
+        try:
+            client = MongoClient("mongodb://localhost:27017/")
+            db = client.tilt
+        except Exception:
+            # Return default preferences if MongoDB connection fails
             return {
                 "preferences": {
                     "thinking": {
@@ -711,8 +711,6 @@ async def get_panel_preferences():
                 }
             }
         
-        client = MongoClient(mongodb_uri)
-        db = client.get_default_database()
         preferences_collection = db.panel_preferences
         
         # Get the latest preferences document
@@ -720,7 +718,7 @@ async def get_panel_preferences():
         
         if not prefs_doc:
             # Check if this is first run and create better defaults
-            first_run_file = "/home/computeragent/.tilt_first_run"
+            first_run_file = "/home/tilt/.tilt_first_run"
             is_first_run = not os.path.exists(first_run_file)
             
             if is_first_run:
@@ -787,16 +785,13 @@ async def save_panel_preferences(request_data: dict):
         from pymongo import MongoClient
         from datetime import datetime, timezone
         
-        mongodb_uri = os.getenv('MONGODB_URI')
-        if not mongodb_uri:
-            return {"success": True, "message": "No MongoDB configured, preferences not persisted"}
-        
+        # MongoDB is always running locally on the container
         preferences = request_data.get("preferences")
         if not preferences:
             return {"error": "Missing preferences data"}
         
-        client = MongoClient(mongodb_uri)
-        db = client.get_default_database()
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client.tilt
         preferences_collection = db.panel_preferences
         
         # Create or update preferences document

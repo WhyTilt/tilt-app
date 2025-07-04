@@ -106,7 +106,7 @@ RUN git clone --branch v1.5.0 https://github.com/novnc/noVNC.git /opt/noVNC && \
 FROM user-apps AS user-setup
 
 # setup user
-ENV USERNAME=computeragent
+ENV USERNAME=tilt
 ENV HOME=/home/$USERNAME
 RUN useradd -m -s /bin/bash -d $HOME $USERNAME
 RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
@@ -117,7 +117,7 @@ RUN mkdir -p $HOME/{Desktop,Documents,Downloads} && \
     mkdir -p $HOME/.local $HOME/.cache $HOME/.mozilla && \
     chown -R $USERNAME:$USERNAME $HOME
 
-USER computeragent
+USER tilt
 WORKDIR $HOME
 
 # Stage 5: Python environment layer
@@ -151,7 +151,7 @@ RUN python -m pip install --upgrade pip==23.1.2 setuptools==58.0.4 wheel==0.40.0
 # Stage 7: Python dependencies layer
 FROM pip-setup AS python-deps
 
-# only reinstall if requirements.txt changes
+# Install Python dependencies
 COPY --chown=$USERNAME:$USERNAME agent/requirements.txt $HOME/agent/requirements.txt
 RUN python -m pip install -r $HOME/agent/requirements.txt
 
@@ -166,12 +166,11 @@ RUN npm install --legacy-peer-deps
 # Stage 9: Application layer (final)
 FROM nodejs-deps AS app
 
-# setup desktop env & app
-COPY --chown=$USERNAME:$USERNAME image/ $HOME
-COPY --chown=$USERNAME:$USERNAME agent/ $HOME/agent/
-COPY --chown=$USERNAME:$USERNAME nextjs/ $HOME/nextjs/
+# Create directories for mounted volumes
+RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
+    chown -R $USERNAME:$USERNAME $HOME/agent $HOME/nextjs $HOME/image
 
-# Build Next.js app (conditionally)
+# Build Next.js app (conditionally) - using mounted volume
 WORKDIR $HOME/nextjs
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
@@ -179,7 +178,7 @@ ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 # Add build argument for development mode
 ARG DEV_MODE=false
 RUN if [ "$DEV_MODE" = "false" ]; then \
-        npm run build; \
+        echo "Build will happen at runtime with mounted code"; \
     else \
         echo "Skipping build in development mode"; \
         mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
@@ -195,6 +194,6 @@ ENV HEIGHT=$HEIGHT
 ENV WIDTH=$WIDTH
 
 # Expose ports
-EXPOSE 8080 8501 6080 27017
+EXPOSE 3001 8501 6080 27017
 
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "./image/entrypoint.sh" ]

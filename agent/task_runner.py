@@ -73,9 +73,9 @@ class TaskModel:
 
 
 class MongoDBConnection:
-    def __init__(self, connection_string: str):
+    def __init__(self, connection_string: str = 'mongodb://localhost:27017/'):
         self.client = MongoClient(connection_string)
-        self.db = self.client.get_default_database()
+        self.db = self.client.tilt
         self.tasks_collection: Collection = self.db.tasks
         
     def get_next_task(self) -> Optional[TaskModel]:
@@ -149,7 +149,7 @@ class MongoDBConnection:
 
 
 class TaskRunner:
-    def __init__(self, mongodb_uri: str):
+    def __init__(self, mongodb_uri: str = 'mongodb://localhost:27017/'):
         self.db = MongoDBConnection(mongodb_uri)
         self.is_running = False
         self.pause_after_completion = True  # Default to pause for inspection

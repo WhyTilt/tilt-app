@@ -97,9 +97,9 @@ async def sampling_loop(
     Agentic sampling loop for the assistant/tool interaction of computer use.
     """
     # Setup tool logging
-    os.makedirs('/home/computeragent/logs', exist_ok=True)
+    os.makedirs('/home/tilt/logs', exist_ok=True)
     tool_logger = logging.getLogger('tools')
-    tool_handler = logging.FileHandler('/home/computeragent/logs/tools.txt')
+    tool_handler = logging.FileHandler('/home/tilt/logs/tools.txt')
     tool_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     tool_logger.addHandler(tool_handler)
     tool_logger.setLevel(logging.INFO)
