@@ -1272,18 +1272,43 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       isBatchRun
     });
     
-    // Stop the current task if one is running
+    // First, abort the ongoing API stream if it exists
+    if (currentAbortController) {
+      console.log('🔥 Aborting current API stream...');
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
+    
+    // Stop the current task in database if one is running
     if (currentTask) {
       runAllLogger.info('stopAutoRun', 'Stopping current task via API', {
         currentTaskId: currentTask.id
       });
-      await stopCurrentTask();
+      try {
+        await fetch(`${API_BASE_URL}/tasks/${currentTask.id}/stop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // Update local task status
+        setTasks(prevTasks => 
+          prevTasks.map(t => 
+            t.id === currentTask.id ? { ...t, status: 'pending' as const } : t
+          )
+        );
+      } catch (error) {
+        console.error('Failed to stop task in database:', error);
+      }
     }
     
+    // Clear all running states
     setAutoRunning(false);
     setIsAnyTaskRunning(false);
     setIsBatchRun(false);
     setIsAgentStarting(false);
+    setCurrentTask(null);
+    setIsLoading(false);
+    streamingMessageRef.current = '';
     
     // Clear task queue
     clearTaskQueue();
@@ -1495,7 +1520,20 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
               </button>
               {(taskQueue.length > 0 || isAnyTaskRunning || tasks.some(t => t.status === 'running')) && (
                 <button
-                  onClick={() => stopAutoRun()}
+                  onClick={async () => {
+                    console.log('🔥 STOP BUTTON CLICKED', {
+                      taskQueue: taskQueue.length,
+                      isAnyTaskRunning,
+                      currentTask,
+                      autoRunning
+                    });
+                    try {
+                      await stopAutoRun();
+                      console.log('🔥 STOP BUTTON COMPLETED');
+                    } catch (error) {
+                      console.error('🔥 STOP BUTTON ERROR:', error);
+                    }
+                  }}
                   className="px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
                 >
                   Stop
