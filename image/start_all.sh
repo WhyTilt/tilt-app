@@ -47,12 +47,21 @@ export PYTHONPATH=/home/tilt:$PYTHONPATH
 python -m agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
 API_PID=$!
 
-# Start Next.js app on port 3001 (main interface) with logging
-echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
+# Install/update Next.js dependencies if needed
+echo "Checking Next.js dependencies..." | tee -a "$LOGS_DIR/startup.log"
 cd /home/tilt/nextjs
+if [ -f "package.json" ]; then
+    echo "Installing Next.js dependencies..." | tee -a "$LOGS_DIR/startup.log"
+    # Ensure proper ownership and install as tilt user
+    sudo chown -R tilt:tilt /home/tilt/nextjs
+    sudo -u tilt npm install --legacy-peer-deps 2>&1 | tee -a "$LOGS_DIR/npm-install.txt"
+fi
 
 # Ensure .next directory exists with correct permissions
 sudo mkdir -p .next && sudo chown -R tilt:tilt .next
+
+# Start Next.js app on port 3001 (main interface) with logging
+echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
 
 # Check if running in development mode
 if [ "$DEV_MODE" = "true" ]; then

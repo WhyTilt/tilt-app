@@ -1,9 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .models import *
 from ..loop import sampling_loop, APIProvider
 from ..tools import ToolCollection, ToolResult, TOOL_GROUPS_BY_VERSION
+from ..config import config
 import asyncio
 import json
 import os
@@ -25,20 +26,21 @@ async def chat_stream_options():
 async def chat_completion_stream(request: ChatRequest):
     async def event_stream():
         try:
-            # Get API key and model configuration from environment
-            api_key = os.getenv('ANTHROPIC_API_KEY')
+            # Get API key and model configuration from database
+            api_key = config.get_api_key()
             if not api_key:
-                raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+                raise ValueError("API key not configured. Please configure it in the frontend.")
             
-            # Get model and provider from environment, with defaults
-            model = os.getenv('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514')
+            # Get model from database
+            model = config.get_model()
             provider_str = os.getenv('API_PROVIDER', 'anthropic')
             
             print(f"Starting new stream request with {len(request.messages)} messages")
-            print(f"Last message: {request.messages[-1] if request.messages else 'None'}")
             print(f"Model: {model}, Provider: {provider_str}")
             print(f"API key present: {'Yes' if api_key else 'No'}")
-            print(f"All messages: {[f'Role: {msg.role}, Content preview: {str(msg.content)[:100]}...' for msg in request.messages]}")
+            print(f"API key first 20 chars: {api_key[:20] if api_key else 'None'}")
+            print(f"API key last 10 chars: {api_key[-10:] if api_key else 'None'}")
+            print(f"API key length: {len(api_key) if api_key else 0}")
             # Convert request to format expected by sampling_loop
             provider = APIProvider(provider_str)
             
