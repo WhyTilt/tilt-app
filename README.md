@@ -56,23 +56,42 @@ Tilt is built as a multi-container system with clear separation of concerns:
 
 - Docker installed and running
 - At least 4GB RAM available
-- Anthropic API key ([Get one here](https://console.anthropic.com/))
 
-### Fast Start
+### One-Line Install
+
+Tilt supports multiple architectures:
+- **AMD64** (Intel/AMD processors)
+- **ARM64** (Apple Silicon, ARM processors)
+
+```bash
+curl -sSL install.whytilt.com | bash
+```
+
+### Manual Install
 
 ```bash
 # Clone the repository
 git clone https://github.com/WhyTilt/tilt-app.git
 cd tilt-app
 
-# Set your API key
-export ANTHROPIC_API_KEY=your_api_key_here
-
 # Build and run with persistent data
 ./run.sh
 ```
 
-Open your browser to [http://localhost:3001](http://localhost:3001) and start automating!
+### Getting Started
+
+1. **Install Tilt** using the one-line installer above
+2. **Navigate to the installation directory**:
+   ```bash
+   cd tilt-app
+   ```
+3. **Start Tilt**:
+   ```bash
+   ./run.sh
+   ```
+4. **Open your browser** to [http://localhost:3001](http://localhost:3001)
+5. **Enter your Anthropic API key** when prompted ([Get one here](https://console.anthropic.com/))
+6. **Start automating!**
 
 
 ## Features
@@ -135,18 +154,6 @@ Once running, Tilt provides multiple access points:
 - **Python API**: [http://localhost:8000](http://localhost:8000) - FastAPI backend server
 - **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
 - **VNC Client**: `vnc://localhost:5900` - For external VNC clients
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | Required |
-| `ANTHROPIC_MODEL` | Claude model to use | claude-sonnet-4-20250514 |
-| `WIDTH` | Desktop resolution width | 1024 |
-| `HEIGHT` | Desktop resolution height | 768 |
-
 
 ## Development
 
