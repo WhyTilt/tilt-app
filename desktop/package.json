@@ -1,0 +1,97 @@
+{
+  "name": "tilt-desktop",
+  "version": "1.0.0",
+  "description": "Tilt Computer Automation - Desktop Application",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "npm run build:mac && npm run build:win",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "tilt",
+    "automation",
+    "desktop",
+    "docker",
+    "anthropic"
+  ],
+  "author": "Tilt Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "@playwright/test": "^1.40.0",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7",
+    "node-docker-api": "^1.1.22",
+    "systeminformation": "^5.21.20"
+  },
+  "build": {
+    "appId": "com.tilt.desktop",
+    "productName": "Tilt",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "your-username",
+      "repo": "tilt-app"
+    }
+  }
+}
