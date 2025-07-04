@@ -1243,7 +1243,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
   };
 
   // Stop auto-running
-  const stopAutoRun = () => {
+  const stopAutoRun = async () => {
     runAllLogger.warn('stopAutoRun', 'Manually stopping auto-run');
     
     runAllLogger.logQueueState('stopAutoRun', {
@@ -1255,18 +1255,18 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       isBatchRun
     });
     
+    // Stop the current task if one is running
+    if (currentTask) {
+      runAllLogger.info('stopAutoRun', 'Stopping current task via API', {
+        currentTaskId: currentTask.id
+      });
+      await stopCurrentTask();
+    }
+    
     setAutoRunning(false);
     setIsAnyTaskRunning(false);
     setIsBatchRun(false);
     setIsAgentStarting(false);
-    
-    // Also clear current task if it's not actually running
-    if (currentTask && !isLoading) {
-      runAllLogger.info('stopAutoRun', 'Clearing stuck current task', {
-        currentTaskId: currentTask.id
-      });
-      setCurrentTask(null);
-    }
     
     // Clear task queue
     clearTaskQueue();
@@ -1471,7 +1471,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
               </button>
               {(taskQueue.length > 0 || isAnyTaskRunning || tasks.some(t => t.status === 'running')) && (
                 <button
-                  onClick={stopAutoRun}
+                  onClick={() => stopAutoRun()}
                   className="px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
                 >
                   Stop
