@@ -31,7 +31,7 @@ npm install --legacy-peer-deps
 npm run build
 cd ../..
 
-# Build with BuildKit for better caching
+# Build with BuildKit for better caching (from parent directory to include tilt-app path)
 DOCKER_BUILDKIT=1 docker build \
     --target app \
     --tag tilt:prod \
@@ -39,7 +39,8 @@ DOCKER_BUILDKIT=1 docker build \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \
     --build-arg WIDTH=1024 \
-    .
+    -f Dockerfile \
+    ..
 
 echo "Production build completed successfully!"
 echo "Use './run-prod.sh' to start the production container"
