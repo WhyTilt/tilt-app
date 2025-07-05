@@ -181,7 +181,10 @@ ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 # Add build argument for development mode
 ARG DEV_MODE=false
 RUN if [ "$DEV_MODE" = "false" ]; then \
-        echo "Production mode - will copy built app from submodules"; \
+        echo "Production mode - copying built app from submodules"; \
+        cp -r /home/tilt/image/nextjs/. /home/tilt/nextjs/ && \
+        cp -r /home/tilt/image/agent/. /home/tilt/agent/ && \
+        chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent; \
     else \
         echo "Development mode - will use mounted volumes"; \
         mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \

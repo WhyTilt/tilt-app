@@ -6,6 +6,15 @@ echo "Starting Tilt in production mode..."
 echo "- Frontend: Pre-built and optimized"
 echo "- Backend: Production configuration"
 
+# Stop any existing containers using port 3001
+echo "Checking for existing containers on port 3001..."
+EXISTING_CONTAINER=$(docker ps --filter "publish=3001" --format "{{.ID}}" | head -n 1)
+if [ ! -z "$EXISTING_CONTAINER" ]; then
+    echo "Stopping existing container using port 3001: $EXISTING_CONTAINER"
+    docker stop $EXISTING_CONTAINER
+    echo "Container stopped"
+fi
+
 # Clear logs directory
 rm -rf ./logs/*
 mkdir -p ./logs
