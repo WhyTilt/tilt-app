@@ -176,19 +176,21 @@ FROM nodejs-deps AS app
 RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
     chown -R $USERNAME:$USERNAME $HOME/agent $HOME/nextjs $HOME/image
 
-# Build Next.js app (conditionally) - using mounted volume
+# Copy Next.js source code and build it
+COPY --chown=$USERNAME:$USERNAME nextjs/ $HOME/nextjs/
 WORKDIR $HOME/nextjs
+
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
-# Add build argument for development mode
-ARG DEV_MODE=false
-RUN if [ "$DEV_MODE" = "false" ]; then \
-        echo "Build will happen at runtime with mounted code"; \
-    else \
-        echo "Skipping build in development mode"; \
-        mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
-    fi
+# Build Next.js app at build time (not runtime)
+RUN npm run build
+
+# Copy Python agent source
+COPY --chown=$USERNAME:$USERNAME agent/ $HOME/agent/
+
+# Copy image directory (entrypoint, scripts, etc.)
+COPY --chown=$USERNAME:$USERNAME image/ $HOME/image/
 
 WORKDIR $HOME
 
