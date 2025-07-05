@@ -85,6 +85,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
   const [isProcessingNextTask, setIsProcessingNextTask] = useState(false);
   const [initialQueueSize, setInitialQueueSize] = useState(0); // Track initial queue size to determine execution mode
   const [lastJsCode, setLastJsCode] = useState<string>(''); // Store the last JavaScript code executed
+  const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null); // Track current stream abort controller
   
   // Use external mode if provided, otherwise use internal state
   const panelMode = externalPanelMode || internalPanelMode;
@@ -434,6 +435,10 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       console.log('🔥 TYPEOF apiClient.sendChatStream:', typeof apiClient.sendChatStream);
       
       try {
+        // Create abort controller for this stream
+        const abortController = new AbortController();
+        setCurrentAbortController(abortController);
+        
         console.log('🔥 CALLING apiClient.sendChatStream...');
         await apiClient.sendChatStream({
           messages: messagesForApi,
@@ -829,11 +834,20 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
             console.log('🔥 Stream completed');
             break;
         }
-        });
+        }, abortController.signal);
         
         console.log('🔥 sendChatStream completed successfully');
+        setCurrentAbortController(null);
       } catch (error) {
         console.error('🔥 ERROR in sendChatStream call:', error);
+        setCurrentAbortController(null);
+        
+        // Check if this was a user-initiated abort
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('🔥 Stream was aborted by user');
+          return; // Don't re-throw abort errors as they're expected
+        }
+        
         throw error;
       }
 
@@ -991,6 +1005,9 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
         isBatchRun,
         isProcessingNextTask
       });
+      
+      // Clean up abort controller
+      setCurrentAbortController(null);
       
       setIsLoading(false);
       streamingMessageRef.current = '';
@@ -1243,7 +1260,7 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
   };
 
   // Stop auto-running
-  const stopAutoRun = () => {
+  const stopAutoRun = async () => {
     runAllLogger.warn('stopAutoRun', 'Manually stopping auto-run');
     
     runAllLogger.logQueueState('stopAutoRun', {
@@ -1255,18 +1272,43 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
       isBatchRun
     });
     
+    // First, abort the ongoing API stream if it exists
+    if (currentAbortController) {
+      console.log('🔥 Aborting current API stream...');
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
+    
+    // Stop the current task in database if one is running
+    if (currentTask) {
+      runAllLogger.info('stopAutoRun', 'Stopping current task via API', {
+        currentTaskId: currentTask.id
+      });
+      try {
+        await fetch(`${API_BASE_URL}/tasks/${currentTask.id}/stop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // Update local task status
+        setTasks(prevTasks => 
+          prevTasks.map(t => 
+            t.id === currentTask.id ? { ...t, status: 'pending' as const } : t
+          )
+        );
+      } catch (error) {
+        console.error('Failed to stop task in database:', error);
+      }
+    }
+    
+    // Clear all running states
     setAutoRunning(false);
     setIsAnyTaskRunning(false);
     setIsBatchRun(false);
     setIsAgentStarting(false);
-    
-    // Also clear current task if it's not actually running
-    if (currentTask && !isLoading) {
-      runAllLogger.info('stopAutoRun', 'Clearing stuck current task', {
-        currentTaskId: currentTask.id
-      });
-      setCurrentTask(null);
-    }
+    setCurrentTask(null);
+    setIsLoading(false);
+    streamingMessageRef.current = '';
     
     // Clear task queue
     clearTaskQueue();
@@ -1276,6 +1318,13 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
 
   // Stop current task
   const stopCurrentTask = async () => {
+    // First, abort the ongoing API stream if it exists
+    if (currentAbortController) {
+      console.log('🔥 Aborting current API stream...');
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
+    
     if (currentTask) {
       try {
         await fetch(`${API_BASE_URL}/tasks/${currentTask.id}/stop`, {
@@ -1471,7 +1520,20 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
               </button>
               {(taskQueue.length > 0 || isAnyTaskRunning || tasks.some(t => t.status === 'running')) && (
                 <button
-                  onClick={stopAutoRun}
+                  onClick={async () => {
+                    console.log('🔥 STOP BUTTON CLICKED', {
+                      taskQueue: taskQueue.length,
+                      isAnyTaskRunning,
+                      currentTask,
+                      autoRunning
+                    });
+                    try {
+                      await stopAutoRun();
+                      console.log('🔥 STOP BUTTON COMPLETED');
+                    } catch (error) {
+                      console.error('🔥 STOP BUTTON ERROR:', error);
+                    }
+                  }}
                   className="px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
                 >
                   Stop

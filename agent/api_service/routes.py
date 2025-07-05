@@ -634,7 +634,7 @@ async def cleanup_browser():
         # Wait for processes to fully terminate
         time.sleep(2)
         
-        # Reset VNC display and start fresh chrome session
+        # Reset VNC display and start fresh chromium session
         try:
             # Kill any existing VNC viewers that might be hanging
             subprocess.run(

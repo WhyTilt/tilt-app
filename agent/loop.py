@@ -55,7 +55,7 @@ class APIProvider(StrEnum):
 SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * You are utilising an Ubuntu virtual machine using {platform.machine()} architecture with internet access.
 * You can feel free to install Ubuntu applications with your bash tool. Use curl instead of wget.
-* To open chrome, please just click on the chrome icon.
+* To open chromium, please just click on the chromium icon.
 * Using bash tool you can start GUI applications, but you need to set export DISPLAY=:1 and use a subshell. For example "(DISPLAY=:1 xterm &)". GUI apps run with bash tool will appear within your desktop environment, but they may take some time to appear. Take a screenshot to confirm it did.
 * When using your bash tool with commands that are expected to output very large quantities of text, redirect into a tmp file and use str_replace_based_edit_tool or `grep -n -B <lines before> -A <lines after> <query> <filename>` to confirm output.
 * When viewing a page it can be helpful to zoom out so that you can see everything on the page.  Either that, or make sure you scroll down to see everything before deciding something isn't available.
@@ -116,15 +116,15 @@ async def sampling_loop(
     tool_logger.info(f"Available tools: {[tool.name for tool in tool_collection.tools]}")
     tool_logger.info(f"Starting sampling loop with tool version: {tool_version}")
     
-    # Auto-start network monitoring if inspect_network tool is available and Chrome is running
+    # Auto-start network monitoring if inspect_network tool is available and Chromium is running
     network_tool = next((tool for tool in tool_collection.tools if tool.name == "inspect_network"), None)
     if network_tool:
         try:
             import time
             import subprocess
             
-            # Check if Chrome is running with remote debugging
-            def check_chrome_debugging():
+            # Check if Chromium is running with remote debugging
+            def check_chromium_debugging():
                 try:
                     result = subprocess.run(['curl', '-s', 'http://localhost:9222/json'], 
                                           capture_output=True, timeout=2)
@@ -132,24 +132,24 @@ async def sampling_loop(
                 except:
                     return False
             
-            # Wait up to 10 seconds for Chrome to be available
-            tool_logger.info("Checking for Chrome with remote debugging...")
-            chrome_ready = False
+            # Wait up to 10 seconds for Chromium to be available
+            tool_logger.info("Checking for Chromium with remote debugging...")
+            chromium_ready = False
             for i in range(10):
-                if check_chrome_debugging():
-                    chrome_ready = True
+                if check_chromium_debugging():
+                    chromium_ready = True
                     break
                 time.sleep(1)
             
-            if chrome_ready:
-                tool_logger.info("Chrome detected, starting network monitoring...")
+            if chromium_ready:
+                tool_logger.info("Chromium detected, starting network monitoring...")
                 result = await network_tool(action="monitor_start")
                 if result.error:
                     tool_logger.warning(f"Failed to auto-start network monitoring: {result.error}")
                 else:
                     tool_logger.info("Network monitoring auto-started successfully")
             else:
-                tool_logger.info("Chrome not detected with remote debugging - network monitoring will start when Chrome opens")
+                tool_logger.info("Chromium not detected with remote debugging - network monitoring will start when Chromium opens")
                 
         except Exception as e:
             tool_logger.warning(f"Exception during network monitoring auto-start: {str(e)}")

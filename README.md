@@ -104,7 +104,7 @@ cd tilt-app
 
 ### 🛠️ Advanced Tool System
 - **Computer Control**: Full mouse, keyboard, and application control
-- **Web Automation**: Advanced browser interaction with Chrome DevTools integration
+- **Web Automation**: Advanced browser interaction with Chromium DevTools integration
 - **JavaScript Execution**: Run custom JS code for complex DOM manipulation
 - **Network Monitoring**: Capture and analyze HTTP requests and responses
 - **Database Integration**: MongoDB reporting and data persistence
