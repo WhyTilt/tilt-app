@@ -27,15 +27,48 @@ if [ -f ".env.local" ]; then
 fi
 
 # Build if needed (check if Dockerfile is newer than any existing image)
-if [ -f "./build.sh" ]; then
-    echo "Running build script..."
-    ./build.sh $DEV_MODE
-elif [ -f "Dockerfile" ]; then
-    if [ "$DEV_MODE" = "true" ]; then
-        echo "Building Docker image in development mode (skipping Next.js build)..."
-        docker build --build-arg DEV_MODE=true -t tilt .
+if [ "$DEV_MODE" = "true" ]; then
+    echo "Development mode: Building Docker image without pre-building Next.js..."
+    if [ -f "./build.sh" ]; then
+        ./build.sh $DEV_MODE
     else
-        echo "Building Docker image in production mode..."
+        docker build --build-arg DEV_MODE=true -t tilt .
+    fi
+else
+    echo "Production mode: Building apps and copying files to ./image/ BEFORE container build"
+    
+    # Build Next.js for production FIRST
+    echo "Building Next.js for production..."
+    cd nextjs
+    # Clean and fix permissions for .next directory
+    rm -rf .next || true
+    mkdir -p .next
+    chmod -R 755 .next 2>/dev/null || true
+    npm run build
+    cd ..
+    
+    # Copy all files to ./image/ directory
+    echo "Copying all files to ./image/ directory..."
+    
+    # Copy agent directory (built Python app)
+    cp -r agent/ image/
+    
+    # Copy nextjs directory (built Next.js app with .next folder)
+    cp -r nextjs/ image/
+    
+    # Copy other necessary files
+    cp pyproject.toml image/ 2>/dev/null || true
+    cp ruff.toml image/ 2>/dev/null || true
+    cp CLAUDE.md image/ 2>/dev/null || true
+    cp README.md image/ 2>/dev/null || true
+    cp LICENSE image/ 2>/dev/null || true
+    
+    echo "Pre-built apps copied to ./image/ successfully!"
+    
+    # Build Docker image with pre-built apps
+    if [ -f "./build.sh" ]; then
+        ./build.sh $DEV_MODE
+    else
         docker build --build-arg DEV_MODE=false -t tilt .
     fi
 fi

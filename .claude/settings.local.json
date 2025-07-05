@@ -116,7 +116,9 @@
       "Bash(git rebase:*)",
       "Bash(docker system prune:*)",
       "Bash(docker restart:*)",
-      "Bash(chown:*)"
+      "Bash(chown:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git submodule add:*)"
     ],
     "deny": []
   }

@@ -8,196 +8,164 @@ Tilt is an advanced computer automation system built on Anthropic's Computer Use
 
 ## Core Architecture
 
-**Multi-Container System:**
-- **Docker Container**: Ubuntu 22.04 with VNC/X11 virtual desktop
-- **Python Backend**: FastAPI server with Anthropic Claude integration
-- **Next.js Frontend**: React-based UI with real-time streaming
-- **MongoDB**: Task storage and result reporting
+**Docker-Based System:**
+- **Docker Container**: Ubuntu 22.04 with VNC/X11 virtual desktop environment
+- **Python Backend**: FastAPI server with Anthropic Claude integration (`image/agent/`)
+- **Next.js Frontend**: React-based UI with real-time streaming (`image/nextjs/`)
+- **MongoDB**: Task storage and result reporting (runs in container)
 
 **Key Components:**
-- `agent/loop.py`: Core AI agent using Claude models
-- `agent/tools/`: Extensible tool framework with versioning
-- `agent/api_service/`: FastAPI backend for streaming chat
-- `nextjs/`: Next.js frontend with feature-based structure
-- `agent/task_runner.py`: MongoDB-based task execution
+- `image/agent/loop.py`: Core AI agent using Claude models and agentic sampling loop
+- `image/agent/tools/`: Extensible tool framework with versioning system
+- `image/agent/api_service/`: FastAPI backend for streaming chat API
+- `image/nextjs/src/app/`: Next.js frontend with feature-based structure
+- `image/agent/task_runner.py`: MongoDB-based task execution system
 
 ## Development Commands
 
 **Docker Operations:**
 ```bash
-./build.sh                    # Build optimized Docker image
-./run.sh                      # Run with persistent data
-./run.sh --tasks             # Run in tasks mode
+./build.sh                    # Build optimized Docker image (production mode)
+./build.sh true               # Build in development mode
+./run.sh                      # Run with persistent data (production mode)
+./run.sh --dev                # Run in development mode
 ```
 
-**Local Development:**
+**Local Development (outside container):**
 ```bash
-# Frontend development
-cd nextjs && npm run dev    # Port 3001
+# Frontend development (if extracted from image/)
+cd image/nextjs && npm install && npm run dev    # Port 3001
 
-# Python development  
-python -m agent.api_service.main  # Port 8000
+# Python development (if extracted from image/)
+cd image && python -m agent.api_service.main     # Port 8000
 
-# Testing
-pytest tests/                 # Python tests
-npm test                      # Frontend tests (in chat/ directory)
+# Code Quality
+ruff check                    # Python linting 
+ruff format                   # Python formatting
+cd image/nextjs && npm run lint    # Next.js linting
+
+# No tests currently exist in the codebase
 ```
+
+**Note:** The main source code currently resides in the `image/` directory. The build process copies code from root-level `agent/` and `nextjs/` directories to `image/` for containerization, but those root directories appear to have been removed in the current state.
 
 ## Tool System Architecture
 
-The system uses a versioned tool framework where tools are grouped by API version:
+The system uses a versioned tool framework where tools are grouped by Anthropic Computer Use API version:
 
 ```python
 TOOL_GROUPS_BY_VERSION = {
-    "computer_use_20241022": [ComputerTool, EditTool, BashTool, ...],
-    "computer_use_20250124": [Updated tools],
-    "computer_use_20250429": [Latest tools]
+    "computer_use_20241022": [ComputerTool20241022, EditTool20241022, BashTool20241022, ...],
+    "computer_use_20250124": [ComputerTool20250124, EditTool20250124, BashTool20250124, ...],
+    "computer_use_20250429": [ComputerTool20250124, EditTool20250429, BashTool20250124, ...]
 }
 ```
 
-**Adding New Tools:**
-1. Create tool class inheriting from `BaseAnthropicTool` in `agent/tools/`
-2. Implement `__call__()` async method and `to_params()` method
-3. Add to appropriate tool group in `agent/tools/groups.py`
-4. Register in `agent/tools/__init__.py`
-
-**Existing Tool Categories:**
+**Available Tool Categories:**
 - **Core**: `computer`, `str_replace_editor`, `bash` - Basic system interaction
-- **Web**: `inspect_js`, `inspect_network` - Browser automation (requires Chromium with --remote-debugging-port=9222)
-- **Database**: `mongodb_reporter`, `mongodb_query` - Task result storage
-- **Testing**: `assert` - Result validation
+- **Web**: `inspect_js`, `inspect_network` - Browser automation (requires Chrome with --remote-debugging-port=9222)
+- **Database**: `mongodb_reporter`, `mongodb_query` - Task result storage and retrieval
+- **Testing**: `assert` - Result validation and assertions
+
+**Adding New Tools:**
+1. Create tool class inheriting from `BaseAnthropicTool` in `image/agent/tools/`
+2. Implement required `__call__()` async method and `to_params()` method
+3. Add to appropriate tool group in `image/agent/tools/groups.py`
+4. Register in `image/agent/tools/__init__.py`
 
 ## Environment & Configuration
 
 **Required Environment Variables:**
-- `ANTHROPIC_API_KEY`: Claude API access
+- `ANTHROPIC_API_KEY`: Claude API access (required)
 
 **Port Configuration:**
-- 3001: Next.js frontend (dev)
+- 3001: Next.js frontend
 - 8000: FastAPI backend
-- 5900: VNC server
+- 5900: VNC server (for direct VNC client access)
 - 6080: noVNC web client
 - 27017: MongoDB
 
 **Key Configuration Files:**
-- `agent/requirements.txt`: Python dependencies
-- `nextjs/package.json`: Node.js dependencies
-- `Dockerfile`: Multi-stage container build with caching
-- `image/init_tasks.json`: Default task definitions
+- `image/agent/requirements.txt`: Python dependencies
+- `image/nextjs/package.json`: Node.js dependencies
+- `Dockerfile`: Multi-stage container build with optimization
+- `pyproject.toml` & `ruff.toml`: Python tooling configuration
 
 ## Frontend Architecture (Next.js)
 
-Uses feature-based folder structure (no generic "components" folder):
+The Next.js app uses a feature-based folder structure in `image/nextjs/src/app/`:
 
 ```
 src/app/
-├── bottom-panel/           # Panel components
-│   ├── task-runner-panel/  # Task execution UI  
-│   ├── instruction-panel/  # User input
-│   └── inspector-panel/    # Tool results
-├── screenshots/            # Visual feedback
-├── modals/                # Dialog components
-└── api/v1/                # API routes
+├── api/v1/                 # API route handlers
+│   ├── chat/stream/        # Streaming chat endpoint
+│   ├── health/             # Health check
+│   └── panels/             # Panel data endpoints
+├── bottom-panel/           # Main panel system
+│   ├── action-panel/       # Action execution UI
+│   ├── inspector-panel/    # Tool results and data inspection
+│   ├── instruction-panel/  # User input interface
+│   ├── log-panel/          # System logging
+│   ├── task-runner-panel/  # Task execution management
+│   └── thinking-panel/     # AI thinking display
+├── screenshots/            # Screenshot viewing and management
+├── modals/                 # Dialog components
+├── task-runner/            # Task execution context
+├── task/                   # Task management context
+└── panel-preferences/      # UI preferences
 ```
 
-**State Management:** React Context with separate contexts for tasks, app state, and task runner.
+**State Management:** React Context with separate contexts for tasks, app state, task runner, and panel preferences.
+
+**Key Dependencies:**
+- Next.js 14.2.3 with React 18
+- Tailwind CSS for styling
+- Lucide React for icons
+- Axios for API calls
 
 ## Task System
 
-**Task Model (MongoDB):**
+Tasks are stored in MongoDB with the following structure:
 ```python
 {
     "_id": ObjectId,
     "instructions": str,         # Natural language instructions
-    "js_expression": str,        # Legacy JavaScript support  
+    "js_expression": str,        # Legacy JavaScript support (optional)
     "tool_use": dict,           # Tool-specific parameters
     "status": "pending|running|completed|error",
     "result": dict,             # Execution results
-    "metadata": dict            # Additional data
+    "metadata": dict            # Additional task metadata
 }
 ```
 
 ## Debugging & Logging
 
-**Log Files:** `/home/tilt/logs/`
+**Log Files:** `/home/tilt/logs/` (when running in container)
 - `api-detailed.log`: Complete API and tool execution logs
 - `py-api-server.txt`: Server startup and HTTP request logs
 - `tools.txt`: Dedicated tool execution logging
 
 **Tool Result Format:** All tools return `ToolResult` objects with standardized `output`, `error`, and optional `base64_image` fields.
 
-## Development Guidelines
+## Container Access Points
 
-1. **GIT**: Start from `dev` branch, create feature/bugfix branches, commit frequently
-2. **GITHUB**: Use issues for features/bugs, move to "In Development" when starting work
-3. **CODING**: Small atomic changes, composition over inheritance, functional over imperative
-4. **REFLECT**: Verify work runs correctly before marking complete
-5. **Frontend**: Feature-based folders, break components into self-contained files
-6. **FUNCTIONAL PROGRAMMING**: Prefer ternary operators, functional patterns, and simple expressions over nested conditionals and complex if/else statements
+When running the container:
+- **Frontend**: [http://localhost:3001](http://localhost:3001) - Main Tilt application
+- **API**: [http://localhost:8000](http://localhost:8000) - FastAPI backend
+- **VNC Web**: [http://localhost:6080](http://localhost:6080) - noVNC web interface
+- **VNC Direct**: `vnc://localhost:5900` - Direct VNC client access
 
-## GitHub Project Management
+## Data Persistence
 
-**Move issues between columns:**
+The system uses volume mounts for persistence:
+- `./user_data/`: User files, browser data, application configs
+- `./db_data/`: MongoDB data persistence
+- `./logs/`: Application and tool execution logs
 
-**Move to Todo:**
-```bash
-gh project item-edit --project-id PVT_kwHODNICkM4A7fzF --id ITEM_ID --field-id PVTSSF_lAHODNICkM4A7fzFzgvxw9g --single-select-option-id ca348567
-```
+## Development Workflow
 
-**Move to In Development:**
-```bash
-gh project item-edit --project-id PVT_kwHODNICkM4A7fzF --id ITEM_ID --field-id PVTSSF_lAHODNICkM4A7fzFzgvxw9g --single-select-option-id e04a4fe7
-```
-
-**Move to In Test:**
-```bash
-gh project item-edit --project-id PVT_kwHODNICkM4A7fzF --id ITEM_ID --field-id PVTSSF_lAHODNICkM4A7fzFzgvxw9g --single-select-option-id 60f4302e
-```
-
-**Move to Completed:**
-```bash
-gh project item-edit --project-id PVT_kwHODNICkM4A7fzF --id ITEM_ID --field-id PVTSSF_lAHODNICkM4A7fzFzgvxw9g --single-select-option-id d7545599
-```
-
-**Get Item ID for an issue:**
-```bash
-gh project item-list 1 --owner itsmarktellez --format json | jq -r '.items[] | select(.content.number == ISSUE_NUMBER) | .id'
-```
-
-## Design System & Color Palette
-
-Tilt uses a carefully crafted dark theme with specific colors that create an elegant, professional appearance.
-
-### Primary Color Palette
-- **Background**: `#18181b` (zinc-900) - Main application background
-- **Panel Background**: `#1f1f23` - Floating panels and containers
-- **Panel Headers**: `#2a2a2e` (zinc-800) - Panel headers and navigation
-- **Borders**: `#3f3f46` (zinc-600) - Panel borders and dividers
-- **Text Primary**: `#ffffff` - Main text and headings
-- **Text Secondary**: `#a1a1aa` (zinc-400) - Descriptions and labels
-- **Text Muted**: `#71717a` (zinc-500) - Timestamps and metadata
-
-### Accent Colors
-- **Green**: `#22c55e` (green-500) - Success states, network monitoring indicators
-- **Green Light**: `#86efac` (green-300) - Network tab active state, highlights
-- **Blue**: `#3b82f6` (blue-500) - JavaScript indicators, primary actions
-- **Blue Light**: `#93c5fd` (blue-300) - JavaScript tab active state
-- **Red**: `#ef4444` (red-500) - Error states and alerts
-- **Yellow/Amber**: `#f59e0b` (amber-500) - Warning states
-
-### Component-Specific Colors
-- **Floating Panels**: 
-  - Background: `bg-zinc-900` with `border-zinc-600` borders
-  - Headers: `bg-zinc-800` with hover states in `hover:bg-zinc-700`
-- **Inspector Panel**:
-  - Content area: `bg-zinc-900` with proper syntax highlighting
-  - Network data: Green accents (`text-green-300`)
-  - JavaScript data: Blue accents (`text-blue-300`)
-- **Control Buttons**: Semi-transparent `bg-zinc-800/90` with backdrop blur
-
-### Typography
-- **Monospace**: Use `font-mono` for code, JSON, and technical data
-- **Line Height**: `leading-relaxed` for better readability in code blocks
-- **Font Weights**: Regular for content, `font-medium` for labels, `font-semibold` for headings
-
-This color scheme provides excellent contrast, readability, and maintains a modern professional aesthetic that users love.
+1. **Local Development**: Work in `image/` directory for immediate testing
+2. **Container Development**: Use `./run.sh --dev` for development mode
+3. **Production Build**: Use `./run.sh` for optimized builds
+4. **Code Quality**: Run `ruff check` and `ruff format` before commits
+5. **Container Rebuild**: Use `./build.sh` when dependencies change
