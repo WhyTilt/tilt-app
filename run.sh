@@ -74,7 +74,7 @@ else
 fi
 
 # Set up Docker environment variables
-DOCKER_ENV_VARS="-e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY -e DEV_MODE=$DEV_MODE"
+DOCKER_ENV_VARS="-e DEV_MODE=$DEV_MODE"
 
 
 # Create db_data directory if it doesn't exist

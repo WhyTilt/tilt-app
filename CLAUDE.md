@@ -75,8 +75,6 @@ TOOL_GROUPS_BY_VERSION = {
 
 ## Environment & Configuration
 
-**Required Environment Variables:**
-- `ANTHROPIC_API_KEY`: Claude API access (required)
 
 **Port Configuration:**
 - 3001: Next.js frontend

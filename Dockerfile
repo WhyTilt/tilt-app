@@ -152,14 +152,14 @@ RUN python -m pip install --upgrade pip==23.1.2 setuptools==58.0.4 wheel==0.40.0
 FROM pip-setup AS python-deps
 
 # Install Python dependencies
-COPY --chown=$USERNAME:$USERNAME agent/requirements.txt $HOME/agent/requirements.txt
+COPY --chown=$USERNAME:$USERNAME tilt-app/image/agent/requirements.txt $HOME/agent/requirements.txt
 RUN python -m pip install -r $HOME/agent/requirements.txt
 
 # Stage 8: Node.js dependencies layer
 FROM python-deps AS nodejs-deps
 
 # Install Next.js dependencies
-COPY --chown=$USERNAME:$USERNAME nextjs/package*.json $HOME/nextjs/
+COPY --chown=$USERNAME:$USERNAME tilt-app/image/nextjs/package*.json $HOME/nextjs/
 WORKDIR $HOME/nextjs
 RUN npm install --legacy-peer-deps
 
@@ -185,6 +185,9 @@ RUN if [ "$DEV_MODE" = "false" ]; then \
     fi
 
 WORKDIR $HOME
+
+# Copy image directory with scripts and configs
+COPY --chown=$USERNAME:$USERNAME tilt-app/image ./image
 
 ARG DISPLAY_NUM=1
 ARG HEIGHT=768

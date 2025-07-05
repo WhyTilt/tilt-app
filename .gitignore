@@ -1,3 +1,9 @@
+# Cloned repositories and symlinks - not tracked in git
+image/nextjs/
+image/nextjs
+image/agent/
+image/agent
+
 .env*
 dev-vals.txt
 .venv

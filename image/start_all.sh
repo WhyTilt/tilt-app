@@ -57,6 +57,13 @@ sudo mkdir -p .next && sudo chown -R tilt:tilt .next
 # Check if running in development mode
 if [ "$DEV_MODE" = "true" ]; then
     echo "Running Next.js in development mode with hot reloading..." | tee -a "$LOGS_DIR/startup.log"
+    # Fix permissions for mounted directory
+    sudo chown -R tilt:tilt /home/tilt/nextjs
+    # Install dependencies if node_modules doesn't exist or is empty
+    if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
+        echo "Installing Next.js dependencies in dev mode..." | tee -a "$LOGS_DIR/startup.log"
+        npm install --legacy-peer-deps 2>&1 | tee -a "$LOGS_DIR/npm-install.txt"
+    fi
     npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"

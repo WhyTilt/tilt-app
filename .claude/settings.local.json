@@ -118,7 +118,13 @@
       "Bash(docker restart:*)",
       "Bash(chown:*)",
       "Bash(gh repo create:*)",
-      "Bash(git submodule add:*)"
+      "Bash(git submodule add:*)",
+      "Bash(git submodule:*)",
+      "Bash(./build-dev.sh:*)",
+      "Bash(git clean:*)",
+      "Bash(git config:*)",
+      "Bash(./run-dev.sh)",
+      "Bash(readlink:*)"
     ],
     "deny": []
   }

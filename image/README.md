@@ -65,9 +65,6 @@ Tilt is built as a multi-container system with clear separation of concerns:
 git clone https://github.com/WhyTilt/tilt-app.git
 cd tilt-app
 
-# Set your API key
-export ANTHROPIC_API_KEY=your_api_key_here
-
 # Build and run with persistent data
 ./run.sh
 ```
@@ -135,18 +132,6 @@ Once running, Tilt provides multiple access points:
 - **Python API**: [http://localhost:8000](http://localhost:8000) - FastAPI backend server
 - **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
 - **VNC Client**: `vnc://localhost:5900` - For external VNC clients
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key | Required |
-| `ANTHROPIC_MODEL` | Claude model to use | claude-sonnet-4-20250514 |
-| `WIDTH` | Desktop resolution width | 1024 |
-| `HEIGHT` | Desktop resolution height | 768 |
-
 
 ## Development
 
