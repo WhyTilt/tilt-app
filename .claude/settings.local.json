@@ -124,7 +124,10 @@
       "Bash(git clean:*)",
       "Bash(git config:*)",
       "Bash(./run-dev.sh)",
-      "Bash(readlink:*)"
+      "Bash(readlink:*)",
+      "Bash(./run-prod.sh)",
+      "Bash(./build-prod.sh:*)",
+      "Bash(DOCKER_BUILDKIT=1 docker build --target app --tag tilt:prod --build-arg DEV_MODE=false --build-arg DISPLAY_NUM=1 --build-arg HEIGHT=768 --build-arg WIDTH=1024 -f Dockerfile ..)"
     ],
     "deny": []
   }

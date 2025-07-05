@@ -45,6 +45,12 @@ echo "Symbolic links created - you can now edit code directly in ../tilt-fronten
 echo "Installing npm dependencies for development..."
 cd image/nextjs && npm install && cd ../..
 
+# Fix database permissions if needed
+if [ -d "./db_data" ] && [ "$(stat -c '%U:%G' ./db_data)" != "$(whoami):$(whoami)" ]; then
+    echo "Fixing database directory permissions..."
+    sudo chown -R $(whoami):$(whoami) ./db_data
+fi
+
 # Build with BuildKit for better caching (from parent directory to include symlinked repos)
 DOCKER_BUILDKIT=1 docker build \
     --target app \

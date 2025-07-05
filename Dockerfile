@@ -170,24 +170,24 @@ FROM nodejs-deps AS app
 RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
     chown -R $USERNAME:$USERNAME $HOME/agent $HOME/nextjs $HOME/image
 
-# Build Next.js app (conditionally) - using mounted volume
+# Build Next.js app (conditionally)  
 WORKDIR $HOME/nextjs
+
+# Copy image directory with scripts and configs first
+COPY --chown=$USERNAME:$USERNAME tilt-app/image/ /home/tilt/image/
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
 # Add build argument for development mode
 ARG DEV_MODE=false
 RUN if [ "$DEV_MODE" = "false" ]; then \
-        echo "Build will happen at runtime with mounted code"; \
+        echo "Production mode - will copy built app from submodules"; \
     else \
-        echo "Skipping build in development mode"; \
+        echo "Development mode - will use mounted volumes"; \
         mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
     fi
 
 WORKDIR $HOME
-
-# Copy image directory with scripts and configs
-COPY --chown=$USERNAME:$USERNAME tilt-app/image ./image
 
 ARG DISPLAY_NUM=1
 ARG HEIGHT=768

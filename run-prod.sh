@@ -48,14 +48,11 @@ docker run \
     -v $(pwd)/user_data/Downloads:/home/tilt/Downloads \
     -v $(pwd)/logs:/home/tilt/logs \
     -v $(pwd)/db_data:/data/db \
-    -v $(pwd)/image/nextjs:/home/tilt/nextjs \
-    -v $(pwd)/image/agent:/home/tilt/agent \
-    -v $(pwd)/image:/home/tilt/image \
     -p 5900:5900 \
     -p 3001:3001 \
     -p 6080:6080 \
     -p 8000:8000 \
-    -it tilt:prod
+    tilt:prod
 
 echo ""
 echo "➡️  Production server started!"
