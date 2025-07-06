@@ -80,32 +80,41 @@ DOCKER_ENV_VARS="-e DEV_MODE=$DEV_MODE"
 # Create db_data directory if it doesn't exist
 mkdir -p ./db_data
 
+# Get absolute path for cross-platform compatibility
+# Use realpath if available (Linux/WSL), otherwise use pwd (macOS/basic systems)
+if command -v realpath > /dev/null 2>&1; then
+    CURRENT_DIR="$(realpath .)"
+else
+    CURRENT_DIR="$(pwd)"
+fi
+
 docker run \
     $DOCKER_ENV_VARS \
     -v /etc/timezone:/etc/timezone:ro \
     -v /etc/localtime:/etc/localtime:ro \
     -e TZ=$(cat /etc/timezone 2>/dev/null || echo "UTC") \
     -v $HOME/.anthropic:/home/tilt/.anthropic \
-    -v $(pwd)/user_data:/home/tilt/user_data \
-    -v $(pwd)/user_data/.mozilla:/home/tilt/.mozilla \
-    -v $(pwd)/user_data/.config/gtk-3.0:/home/tilt/.config/gtk-3.0 \
-    -v $(pwd)/user_data/.config/gtk-2.0:/home/tilt/.config/gtk-2.0 \
-    -v $(pwd)/user_data/.config/libreoffice:/home/tilt/.config/libreoffice \
-    -v $(pwd)/user_data/.config/pulse:/home/tilt/.config/pulse \
-    -v $(pwd)/user_data/.local:/home/tilt/.local \
-    -v $(pwd)/user_data/.cache:/home/tilt/.cache \
-    -v $(pwd)/user_data/Desktop:/home/tilt/Desktop \
-    -v $(pwd)/user_data/Documents:/home/tilt/Documents \
-    -v $(pwd)/user_data/Downloads:/home/tilt/Downloads \
-    -v $(pwd)/logs:/home/tilt/logs \
-    -v $(pwd)/db_data:/data/db \
-    -v $(pwd)/nextjs:/home/tilt/nextjs \
-    -v $(pwd)/agent:/home/tilt/agent \
-    -v $(pwd)/image:/home/tilt/image \
+    -v "${CURRENT_DIR}/user_data":/home/tilt/user_data \
+    -v "${CURRENT_DIR}/user_data/.mozilla":/home/tilt/.mozilla \
+    -v "${CURRENT_DIR}/user_data/.config/gtk-3.0":/home/tilt/.config/gtk-3.0 \
+    -v "${CURRENT_DIR}/user_data/.config/gtk-2.0":/home/tilt/.config/gtk-2.0 \
+    -v "${CURRENT_DIR}/user_data/.config/libreoffice":/home/tilt/.config/libreoffice \
+    -v "${CURRENT_DIR}/user_data/.config/pulse":/home/tilt/.config/pulse \
+    -v "${CURRENT_DIR}/user_data/.local":/home/tilt/.local \
+    -v "${CURRENT_DIR}/user_data/.cache":/home/tilt/.cache \
+    -v "${CURRENT_DIR}/user_data/Desktop":/home/tilt/Desktop \
+    -v "${CURRENT_DIR}/user_data/Documents":/home/tilt/Documents \
+    -v "${CURRENT_DIR}/user_data/Downloads":/home/tilt/Downloads \
+    -v "${CURRENT_DIR}/logs":/home/tilt/logs \
+    -v "${CURRENT_DIR}/db_data":/data/db \
+    -v "${CURRENT_DIR}/nextjs":/home/tilt/nextjs \
+    -v "${CURRENT_DIR}/agent":/home/tilt/agent \
+    -v "${CURRENT_DIR}/image":/home/tilt/image \
     -p 5900:5900 \
     -p 3001:3001 \
     -p 6080:6080 \
     -p 8000:8000 \
+    -p 27017:27017 \
     -it tilt:latest
 
 echo ""
