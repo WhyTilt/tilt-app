@@ -31,8 +31,8 @@ fi
 
 # Fix ownership for current user on both repositories
 echo "Fixing ownership for live editing..."
-sudo chown -R $(whoami):$(whoami) ../tilt-frontend
-sudo chown -R $(whoami):$(whoami) ../tilt-agent
+chown -R $(whoami):$(whoami) ../tilt-frontend
+chown -R $(whoami):$(whoami) ../tilt-agent
 
 # Create symbolic links
 echo "Creating symbolic links..."
@@ -48,19 +48,19 @@ cd image/nextjs && npm install && cd ../..
 # Fix database permissions if needed
 if [ -d "./db_data" ] && [ "$(stat -c '%U:%G' ./db_data)" != "$(whoami):$(whoami)" ]; then
     echo "Fixing database directory permissions..."
-    sudo chown -R $(whoami):$(whoami) ./db_data
+    chown -R $(whoami):$(whoami) ./db_data
 fi
 
-# Build with BuildKit for better caching (from parent directory to include symlinked repos)
-DOCKER_BUILDKIT=1 docker build \
+# Build with BuildKit for better caching (from parent directory to include repos)
+cd .. && DOCKER_BUILDKIT=1 docker build \
     --target app \
     --tag tilt:dev \
     --build-arg DEV_MODE=true \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \
     --build-arg WIDTH=1024 \
-    -f Dockerfile \
-    ..
+    -f tilt-app/Dockerfile \
+    . && cd tilt-app
 
 echo "Development build completed successfully!"
 echo "Use './run-dev.sh' to start the development container"

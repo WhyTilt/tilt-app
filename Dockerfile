@@ -152,14 +152,14 @@ RUN python -m pip install --upgrade pip==23.1.2 setuptools==58.0.4 wheel==0.40.0
 FROM pip-setup AS python-deps
 
 # Install Python dependencies
-COPY --chown=$USERNAME:$USERNAME image/agent/requirements.txt $HOME/agent/requirements.txt
+COPY --chown=$USERNAME:$USERNAME tilt-agent/requirements.txt $HOME/agent/requirements.txt
 RUN python -m pip install -r $HOME/agent/requirements.txt
 
 # Stage 8: Node.js dependencies layer
 FROM python-deps AS nodejs-deps
 
 # Install Next.js dependencies
-COPY --chown=$USERNAME:$USERNAME image/nextjs/package*.json $HOME/nextjs/
+COPY --chown=$USERNAME:$USERNAME tilt-frontend/package*.json $HOME/nextjs/
 WORKDIR $HOME/nextjs
 RUN npm install --legacy-peer-deps
 
@@ -174,7 +174,10 @@ RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
 WORKDIR $HOME/nextjs
 
 # Copy image directory with scripts and configs first
-COPY --chown=$USERNAME:$USERNAME image/ /home/tilt/image/
+COPY --chown=$USERNAME:$USERNAME tilt-app/image/ /home/tilt/image/
+# Copy repositories for development mode
+COPY --chown=$USERNAME:$USERNAME tilt-frontend/ /home/tilt/staging/tilt-frontend/
+COPY --chown=$USERNAME:$USERNAME tilt-agent/ /home/tilt/staging/tilt-agent/
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 
@@ -186,8 +189,10 @@ RUN if [ "$DEV_MODE" = "false" ]; then \
         cp -r /home/tilt/image/agent/. /home/tilt/agent/ && \
         chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent; \
     else \
-        echo "Development mode - will use mounted volumes"; \
-        mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
+        echo "Development mode - copying source code from repositories"; \
+        cp -r /home/tilt/staging/tilt-frontend/. /home/tilt/nextjs/ && \
+        cp -r /home/tilt/staging/tilt-agent/. /home/tilt/agent/ && \
+        mkdir -p .next && chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent .next; \
     fi
 
 WORKDIR $HOME
