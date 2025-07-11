@@ -32,7 +32,7 @@ REM Check if dev image exists
 docker images -q !IMAGE_TAG!:latest > nul 2>&1
 if !errorlevel! neq 0 (
     echo Development image not found. Building...
-    call build\build-dev.bat
+    call build\build.bat dev
 )
 
 REM Create necessary directories

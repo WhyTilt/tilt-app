@@ -32,7 +32,7 @@ REM Check if prod image exists
 docker images -q !IMAGE_TAG!:latest > nul 2>&1
 if !errorlevel! neq 0 (
     echo Production image not found. Building...
-    call build\build-prod.bat
+    call build\build.bat prod
 )
 
 REM Create necessary directories

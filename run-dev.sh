@@ -56,7 +56,7 @@ fi
 # Check if dev image exists
 if [[ "$(docker images -q $IMAGE_TAG:latest 2> /dev/null)" == "" ]]; then
     echo "Development image not found. Building..."
-    ./build/build-dev.sh
+    ./build/build.sh dev
 fi
 
 # Create necessary directories

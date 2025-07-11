@@ -56,7 +56,7 @@ fi
 # Check if prod image exists
 if [[ "$(docker images -q $IMAGE_TAG:latest 2> /dev/null)" == "" ]]; then
     echo "Production image not found. Building..."
-    ./build/build-prod.sh
+    ./build/build.sh prod
 fi
 
 # Create necessary directories
