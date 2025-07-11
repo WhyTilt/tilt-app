@@ -26,51 +26,19 @@ if [ -f ".env.local" ]; then
     export $(grep -v '^#' .env.local | xargs)
 fi
 
-# Build if needed (check if Dockerfile is newer than any existing image)
+# Determine which Docker image to use
 if [ "$DEV_MODE" = "true" ]; then
-    echo "Development mode: Building Docker image without pre-building Next.js..."
-    if [ -f "./build.sh" ]; then
-        ./build.sh $DEV_MODE
-    else
-        docker build --build-arg DEV_MODE=true -t tilt .
-    fi
+    IMAGE_NAME="tilt-dev-nix:latest"
+    echo "Starting Tilt in development mode..."
 else
-    echo "Production mode: Building apps and copying files to ./image/ BEFORE container build"
-    
-    # Build Next.js for production FIRST
-    echo "Building Next.js for production..."
-    cd nextjs
-    # Clean and fix permissions for .next directory
-    rm -rf .next || true
-    mkdir -p .next
-    chmod -R 755 .next 2>/dev/null || true
-    npm run build
-    cd ..
-    
-    # Copy all files to ./image/ directory
-    echo "Copying all files to ./image/ directory..."
-    
-    # Copy agent directory (built Python app)
-    cp -r agent/ image/
-    
-    # Copy nextjs directory (built Next.js app with .next folder)
-    cp -r nextjs/ image/
-    
-    # Copy other necessary files
-    cp pyproject.toml image/ 2>/dev/null || true
-    cp ruff.toml image/ 2>/dev/null || true
-    cp CLAUDE.md image/ 2>/dev/null || true
-    cp README.md image/ 2>/dev/null || true
-    cp LICENSE image/ 2>/dev/null || true
-    
-    echo "Pre-built apps copied to ./image/ successfully!"
-    
-    # Build Docker image with pre-built apps
-    if [ -f "./build.sh" ]; then
-        ./build.sh $DEV_MODE
-    else
-        docker build --build-arg DEV_MODE=false -t tilt .
-    fi
+    IMAGE_NAME="tilt-app-nix:latest"
+    echo "Starting Tilt in production mode..."
+fi
+
+# Check if the image exists
+if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
+    echo "Docker image '$IMAGE_NAME' not found. Please run './build/build.sh' first to build the image."
+    exit 1
 fi
 
 # Set up Docker environment variables
@@ -115,7 +83,7 @@ docker run \
     -p 6080:6080 \
     -p 8000:8000 \
     -p 27017:27017 \
-    -it tilt:latest
+    -d "$IMAGE_NAME"
 
 echo ""
 echo "➡️  Open http://localhost:3001 for Tilt"

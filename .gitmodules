@@ -1,6 +1,6 @@
 [submodule "image/nextjs"]
 	path = image/nextjs
-	url = https://github.com/WhyTilt/tilt-frontend.git
+	url = git@github.com:WhyTilt/tilt-frontend.git
 [submodule "image/agent"]
 	path = image/agent
-	url = https://github.com/WhyTilt/tilt-agent.git
+	url = git@github.com:WhyTilt/tilt-agent.git

@@ -133,6 +133,9 @@ Once running, Tilt provides multiple access points:
 - **Desktop View**: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) - Direct desktop access
 - **VNC Client**: `vnc://localhost:5900` - For external VNC clients
 
+## Configuration
+
+
 ## Development
 
 ### Local Development Setup

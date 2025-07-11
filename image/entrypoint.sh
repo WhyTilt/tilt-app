@@ -7,7 +7,8 @@ sudo mkdir -p /data/db
 sudo chown -R mongodb:mongodb /data/db
 sudo cp ./image/mongod.conf /tmp/mongod.conf
 sudo chown mongodb:mongodb /tmp/mongod.conf
-sudo -u mongodb mongod --config /tmp/mongod.conf
+sudo -u mongodb mongod --config /tmp/mongod.conf &
+MONGODB_PID=$!
 
 # Wait for MongoDB to be ready
 echo "Waiting for MongoDB to be ready..."
@@ -38,5 +39,6 @@ find ~/.config/ -maxdepth 1 -name "tint2" -exec chown -R tilt:tilt {} \; 2>/dev/
 ./image/novnc_startup.sh
 
 
-# Keep the container running
+# Keep the container running and wait for all services
+echo "All services started. Container is ready."
 tail -f /dev/null

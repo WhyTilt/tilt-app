@@ -98,39 +98,34 @@ if [ "$MODE" = "dev" ]; then
     echo "- Python will run with live code reloading"
     echo "- Source code will be mounted as volumes"
     
-    # Clean up any existing directories/symlinks
-    if [ -L "../image/nextjs" ] || [ -d "../image/nextjs" ]; then
-        echo "Removing existing nextjs..."
-        docker run --rm -v $(pwd)/..:/workspace -w /workspace alpine:latest rm -rf image/nextjs
-    fi
-    if [ -L "../image/agent" ] || [ -d "../image/agent" ]; then
-        echo "Removing existing agent..."
-        docker run --rm -v $(pwd)/..:/workspace -w /workspace alpine:latest rm -rf image/agent
-    fi
+    # Set up repositories for development using submodules (preserve tracking)
+    echo "Setting up repositories for development using submodules..."
     
-    # Clone repositories in parent directory if they don't exist
-    if [ ! -d "../../tilt-frontend" ]; then
-        echo "Cloning tilt-frontend..."
-        cd ../.. && git clone https://github.com/WhyTilt/tilt-frontend.git && cd app/build
+    # Initialize and update submodules if they don't exist
+    if [ ! -d "../image/nextjs/.git" ] || [ ! -d "../image/agent/.git" ]; then
+        echo "Initializing submodules for development..."
+        
+        # Remove from git index if they exist as regular directories
+        (cd .. && git rm --cached image/nextjs 2>/dev/null || true)
+        (cd .. && git rm --cached image/agent 2>/dev/null || true)
+        
+        # Remove existing directories/symlinks
+        rm -rf ../image/nextjs ../image/agent 2>/dev/null || true
+        
+        # Add submodules
+        (cd .. && git submodule add -f git@github.com:WhyTilt/tilt-frontend.git image/nextjs) || echo "Submodule image/nextjs already exists"
+        (cd .. && git submodule add -f git@github.com:WhyTilt/tilt-agent.git image/agent) || echo "Submodule image/agent already exists"
+        
+        # Update submodules to latest
+        (cd .. && git submodule update --init --recursive)
+    else
+        echo "Submodules already exist - updating to latest..."
+        (cd .. && git submodule update --remote --recursive)
     fi
-    if [ ! -d "../../tilt-agent" ]; then
-        echo "Cloning tilt-agent..."
-        cd ../.. && git clone https://github.com/WhyTilt/tilt-agent.git && cd app/build
-    fi
-    
-    # Repositories should have correct ownership from git clone
-    echo "Repositories ready for live editing..."
-    
-    # Create symbolic links
-    echo "Creating symbolic links..."
-    ln -s ../../../tilt-frontend ../image/nextjs
-    ln -s ../../../tilt-agent ../image/agent
-    
-    echo "Symbolic links created - you can now edit code directly in ../../tilt-frontend and ../../tilt-agent"
     
     # Install npm dependencies for development
     echo "Installing npm dependencies for development..."
-    cd ../image/nextjs && npm install && cd ../../build
+    (cd ../image/nextjs && npm install)
     
     # Database directory should be ready
     mkdir -p ../db_data
@@ -143,7 +138,12 @@ else
     
     # Clear database for production
     echo "Clearing database collections for production..."
-    rm -rf ../db_data
+    if [ -d "../db_data" ]; then
+        # Try to remove with regular permissions first
+        rm -rf ../db_data 2>/dev/null || {
+            echo "Note: Some database files may have restricted permissions - they will be overwritten on next run"
+        }
+    fi
     mkdir -p ../db_data
     echo "Database cleared"
     
@@ -160,42 +160,47 @@ else
         rm -rf ../image/agent
     fi
     
-    # Initialize and update submodules for production
-    echo "Setting up git submodules for production..."
-    
-    # Remove from git index if they exist
-    cd .. && git rm --cached image/nextjs 2>/dev/null || true
-    git rm --cached image/agent 2>/dev/null || true
-    
-    # Add submodules (force add since they're in .gitignore)
-    git submodule add -f https://github.com/WhyTilt/tilt-frontend.git image/nextjs || echo "Submodule image/nextjs already exists"
-    git submodule add -f https://github.com/WhyTilt/tilt-agent.git image/agent || echo "Submodule image/agent already exists"
-    
-    # Update submodules to latest
-    git submodule update --init --recursive && cd build
+    # Check if repositories exist in parent directory first
+    if [ -d "../../tilt-frontend" ] && [ -d "../../tilt-agent" ]; then
+        echo "Using existing repositories from parent directory..."
+        # Copy repositories to image directory
+        cp -r ../../tilt-frontend ../image/nextjs
+        cp -r ../../tilt-agent ../image/agent
+    else
+        # Initialize and update submodules for production
+        echo "Setting up git submodules for production..."
+        
+        # Remove from git index if they exist
+        (cd .. && git rm --cached image/nextjs 2>/dev/null || true)
+        (cd .. && git rm --cached image/agent 2>/dev/null || true)
+        
+        # Add submodules (force add since they're in .gitignore)
+        (cd .. && git submodule add -f git@github.com:WhyTilt/tilt-frontend.git image/nextjs) || echo "Submodule image/nextjs already exists"
+        (cd .. && git submodule add -f git@github.com:WhyTilt/tilt-agent.git image/agent) || echo "Submodule image/agent already exists"
+        
+        # Update submodules to latest
+        (cd .. && git submodule update --init --recursive)
+    fi
     
     # Build Next.js for production
     echo "Building Next.js for production..."
-    cd ../image/nextjs
-    npm install --legacy-peer-deps
-    npm run build
-    cd ../../build
+    (cd ../image/nextjs && npm install --legacy-peer-deps && npm run build)
     
     DEV_MODE_ARG="false"
 fi
 
 # Build with BuildKit for better caching
 echo "Building Docker image ($IMAGE_TAG)..."
-cd ../.. && DOCKER_BUILDKIT=1 docker build \
+(cd .. && DOCKER_BUILDKIT=1 docker build \
     $PLATFORM_ARG \
     --target app \
     --tag $IMAGE_TAG:latest \
-    --file app/$DOCKERFILE \
+    --file build/$DOCKERFILE \
     --build-arg DEV_MODE=$DEV_MODE_ARG \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \
     --build-arg WIDTH=1024 \
-    . && cd app/build
+    .)
 
 echo "✅ $MODE build completed successfully!"
 echo "Image tagged as: $IMAGE_TAG:latest"
