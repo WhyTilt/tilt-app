@@ -62,8 +62,8 @@ Tilt is built as a multi-container system with clear separation of concerns:
 
 ```bash
 # Clone the repository
-git clone https://github.com/WhyTilt/tilt-app.git
-cd tilt-app
+git clone https://github.com/WhyTilt/tilt-app.git app
+cd app
 
 # Build and run with persistent data
 ./run.sh
@@ -193,8 +193,8 @@ newgrp docker
 - 🌐 [Website](https://whytilt.com)
 - 🤝 [Contributing](CONTRIBUTING.md)
 - 📋 [Code of Conduct](CODE_OF_CONDUCT.md)
-- 🐛 [Issues](https://github.com/WhyTilt/tilt-app/issues)
-- 💬 [Discussions](https://github.com/WhyTilt/tilt-app/discussions)
+- 🐛 [Issues](https://github.com/WhyTilt/app/issues)
+- 💬 [Discussions](https://github.com/WhyTilt/app/discussions)
 
 ## Licensing
 

@@ -22,11 +22,11 @@ fi
 # Clone repositories in parent directory if they don't exist
 if [ ! -d "../tilt-frontend" ]; then
     echo "Cloning tilt-frontend..."
-    cd .. && git clone https://github.com/WhyTilt/tilt-frontend.git && cd tilt-app
+    cd .. && git clone https://github.com/WhyTilt/tilt-frontend.git && cd app
 fi
 if [ ! -d "../tilt-agent" ]; then
     echo "Cloning tilt-agent..."
-    cd .. && git clone https://github.com/WhyTilt/tilt-agent.git && cd tilt-app
+    cd .. && git clone https://github.com/WhyTilt/tilt-agent.git && cd app
 fi
 
 # Fix ownership for current user on both repositories
@@ -59,8 +59,8 @@ cd .. && DOCKER_BUILDKIT=1 docker build \
     --build-arg DISPLAY_NUM=1 \
     --build-arg HEIGHT=768 \
     --build-arg WIDTH=1024 \
-    -f tilt-app/Dockerfile \
-    . && cd tilt-app
+    -f app/Dockerfile \
+    . && cd app
 
 echo "Development build completed successfully!"
 echo "Use './run-dev.sh' to start the development container"

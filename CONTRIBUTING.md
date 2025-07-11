@@ -34,8 +34,8 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/WhyTilt/tilt-app.git
-   cd tilt-app
+   git clone https://github.com/WhyTilt/tilt-app.git app
+   cd app
    ```
 3. Add the upstream repository:
    ```bash

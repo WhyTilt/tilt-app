@@ -2,9 +2,37 @@
 
 set -e
 
-echo "Starting Tilt in production mode..."
-echo "- Frontend: Pre-built and optimized"
-echo "- Backend: Production configuration"
+echo "=== Running Tilt (Production Mode) ==="
+
+# Detect platform and architecture
+PLATFORM=$(uname -s)
+ARCH=$(uname -m)
+
+echo "Detected platform: $PLATFORM"
+echo "Detected architecture: $ARCH"
+
+# Determine Docker image tag based on platform/arch
+case "$PLATFORM" in
+    "Linux")
+        if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            IMAGE_TAG="tilt-app-arm64"
+            echo "Using ARM64 Linux image"
+        else
+            IMAGE_TAG="tilt-app-nix"
+            echo "Using x86_64 Linux image"
+        fi
+        ;;
+    "Darwin")
+        IMAGE_TAG="tilt-app-arm64"
+        echo "Using Mac ARM64 image (Apple Silicon)"
+        ;;
+    *)
+        echo "❌ Unsupported platform: $PLATFORM"
+        echo "This script supports Linux and macOS only."
+        echo "For Windows, use run-prod.bat"
+        exit 1
+        ;;
+esac
 
 # Stop any existing containers using port 3001
 echo "Checking for existing containers on port 3001..."
@@ -26,20 +54,20 @@ if [ -f ".env.local" ]; then
 fi
 
 # Check if prod image exists
-if [[ "$(docker images -q tilt:prod 2> /dev/null)" == "" ]]; then
+if [[ "$(docker images -q $IMAGE_TAG:latest 2> /dev/null)" == "" ]]; then
     echo "Production image not found. Building..."
-    ./build-prod.sh
+    ./build/build-prod.sh
 fi
-
-# Set up Docker environment variables
-DOCKER_ENV_VARS="-e DEV_MODE=false"
 
 # Create necessary directories
 mkdir -p ./db_data
 
-echo "Starting production container..."
+echo "Starting production container ($IMAGE_TAG)..."
+echo "- Frontend: Pre-built and optimized"
+echo "- Backend: Production configuration"
+
 docker run \
-    $DOCKER_ENV_VARS \
+    -e DEV_MODE=false \
     -v /etc/timezone:/etc/timezone:ro \
     -v /etc/localtime:/etc/localtime:ro \
     -e TZ=$(cat /etc/timezone 2>/dev/null || echo "UTC") \
@@ -61,7 +89,8 @@ docker run \
     -p 3001:3001 \
     -p 6080:6080 \
     -p 8000:8000 \
-    tilt:prod
+    -p 27017:27017 \
+    -it $IMAGE_TAG:latest
 
 echo ""
 echo "➡️  Production server started!"

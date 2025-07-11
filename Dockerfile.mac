@@ -1,5 +1,5 @@
-# Stage 1: Base OS layer
-FROM docker.io/ubuntu:22.04 AS base
+# Stage 1: Base OS layer - ARM64 optimized for Apple Silicon
+FROM --platform=linux/arm64 docker.io/ubuntu:22.04 AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBIAN_PRIORITY=high
@@ -56,8 +56,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
 RUN curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
     gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
 
-# Create a list file for MongoDB
-RUN echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
+# Create a list file for MongoDB - ARM64 specific
+RUN echo "deb [ arch=arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | \
     tee /etc/apt/sources.list.d/mongodb-org-7.0.list
 
 # Install MongoDB packages
@@ -80,9 +80,9 @@ RUN usermod -aG sudo mongodb && \
 # Stage 3: User applications layer
 FROM system-packages AS user-apps
 
-# Install Google Chrome (which includes Chromium functionality)
+# Install Google Chrome (ARM64 version)
 RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    echo "deb [arch=arm64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     google-chrome-stable \

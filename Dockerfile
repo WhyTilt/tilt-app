@@ -174,7 +174,7 @@ RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
 WORKDIR $HOME/nextjs
 
 # Copy image directory with scripts and configs first
-COPY --chown=$USERNAME:$USERNAME tilt-app/image/ /home/tilt/image/
+COPY --chown=$USERNAME:$USERNAME app/image/ /home/tilt/image/
 # Copy repositories for development mode
 COPY --chown=$USERNAME:$USERNAME tilt-frontend/ /home/tilt/staging/tilt-frontend/
 COPY --chown=$USERNAME:$USERNAME tilt-agent/ /home/tilt/staging/tilt-agent/

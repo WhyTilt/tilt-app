@@ -48,7 +48,7 @@ npm install --legacy-peer-deps
 npm run build
 cd ../..
 
-# Build with BuildKit for better caching (from parent directory to include tilt-app path)
+# Build with BuildKit for better caching (from parent directory to include app path)
 DOCKER_BUILDKIT=1 docker build \
     --target app \
     --tag tilt:prod \

@@ -2,9 +2,37 @@
 
 set -e
 
-echo "Starting Tilt in development mode..."
-echo "- Frontend: npm run dev (hot reloading)"
-echo "- Backend: Python with live reloading"
+echo "=== Running Tilt (Development Mode) ==="
+
+# Detect platform and architecture
+PLATFORM=$(uname -s)
+ARCH=$(uname -m)
+
+echo "Detected platform: $PLATFORM"
+echo "Detected architecture: $ARCH"
+
+# Determine Docker image tag based on platform/arch
+case "$PLATFORM" in
+    "Linux")
+        if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            IMAGE_TAG="tilt-dev-arm64"
+            echo "Using ARM64 Linux image"
+        else
+            IMAGE_TAG="tilt-dev-nix"
+            echo "Using x86_64 Linux image"
+        fi
+        ;;
+    "Darwin")
+        IMAGE_TAG="tilt-dev-arm64"
+        echo "Using Mac ARM64 image (Apple Silicon)"
+        ;;
+    *)
+        echo "❌ Unsupported platform: $PLATFORM"
+        echo "This script supports Linux and macOS only."
+        echo "For Windows, use run-dev.bat"
+        exit 1
+        ;;
+esac
 
 # Stop any existing containers using port 3001
 echo "Checking for existing containers on port 3001..."
@@ -26,20 +54,20 @@ if [ -f ".env.local" ]; then
 fi
 
 # Check if dev image exists
-if [[ "$(docker images -q tilt:dev 2> /dev/null)" == "" ]]; then
+if [[ "$(docker images -q $IMAGE_TAG:latest 2> /dev/null)" == "" ]]; then
     echo "Development image not found. Building..."
-    ./build-dev.sh
+    ./build/build-dev.sh
 fi
-
-# Set up Docker environment variables
-DOCKER_ENV_VARS="-e DEV_MODE=true"
 
 # Create necessary directories
 mkdir -p ./db_data
 
-echo "Starting development container..."
+echo "Starting development container ($IMAGE_TAG)..."
+echo "- Frontend: npm run dev (hot reloading)"
+echo "- Backend: Python with live reloading"
+
 docker run \
-    $DOCKER_ENV_VARS \
+    -e DEV_MODE=true \
     -v /etc/timezone:/etc/timezone:ro \
     -v /etc/localtime:/etc/localtime:ro \
     -e TZ=$(cat /etc/timezone 2>/dev/null || echo "UTC") \
@@ -64,7 +92,8 @@ docker run \
     -p 3001:3001 \
     -p 6080:6080 \
     -p 8000:8000 \
-    -it tilt:dev
+    -p 27017:27017 \
+    -it $IMAGE_TAG:latest
 
 echo ""
 echo "➡️  Development server started!"
