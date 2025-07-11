@@ -118,10 +118,8 @@ if [ "$MODE" = "dev" ]; then
         cd ../.. && git clone https://github.com/WhyTilt/tilt-agent.git && cd app/build
     fi
     
-    # Fix ownership for current user on both repositories
-    echo "Fixing ownership for live editing..."
-    chown -R $(whoami):$(whoami) ../../tilt-frontend
-    chown -R $(whoami):$(whoami) ../../tilt-agent
+    # Repositories should have correct ownership from git clone
+    echo "Repositories ready for live editing..."
     
     # Create symbolic links
     echo "Creating symbolic links..."
@@ -134,11 +132,8 @@ if [ "$MODE" = "dev" ]; then
     echo "Installing npm dependencies for development..."
     cd ../image/nextjs && npm install && cd ../../build
     
-    # Fix database permissions if needed
-    if [ -d "../db_data" ] && [ "$(stat -c '%U:%G' ../db_data)" != "$(whoami):$(whoami)" ]; then
-        echo "Fixing database directory permissions..."
-        chown -R $(whoami):$(whoami) ../db_data
-    fi
+    # Database directory should be ready
+    mkdir -p ../db_data
     
     DEV_MODE_ARG="true"
 else
@@ -148,10 +143,9 @@ else
     
     # Clear database for production
     echo "Clearing database collections for production..."
-    sudo rm -rf ../db_data
+    rm -rf ../db_data
     mkdir -p ../db_data
-    sudo chown -R $(whoami):$(whoami) ../db_data
-    echo "Database cleared and permissions fixed"
+    echo "Database cleared"
     
     # Set up repositories for production build using submodules
     echo "Setting up repositories for production build using submodules..."
