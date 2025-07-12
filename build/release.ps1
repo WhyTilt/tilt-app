@@ -87,6 +87,25 @@ try {
     exit 1
 }
 
+# Load .env.local file if it exists (check current and parent directory)
+if (Test-Path ".env.local") {
+    Write-Host "Loading environment variables from .env.local..."
+    Get-Content ".env.local" | ForEach-Object {
+        if ($_ -notmatch "^#" -and $_ -match "=") {
+            $name, $value = $_ -split "=", 2
+            Set-Item -Path "env:$name" -Value $value
+        }
+    }
+} elseif (Test-Path "../.env.local") {
+    Write-Host "Loading environment variables from ../.env.local..."
+    Get-Content "../.env.local" | ForEach-Object {
+        if ($_ -notmatch "^#" -and $_ -match "=") {
+            $name, $value = $_ -split "=", 2
+            Set-Item -Path "env:$name" -Value $value
+        }
+    }
+}
+
 # Check DockerHub authentication
 $dockerInfo = docker system info | Select-String "Username:"
 if (-not $dockerInfo) {
