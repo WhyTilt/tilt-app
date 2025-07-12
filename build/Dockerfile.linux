@@ -170,24 +170,24 @@ FROM nodejs-deps AS app
 USER tilt
 
 # Create directories for mounted volumes
-RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image
+RUN mkdir -p $HOME/image
 
-# Build Next.js app (conditionally)  
-WORKDIR $HOME/nextjs
-
-# Copy image directory with scripts and configs first
+# Copy image directory with scripts, configs, and all source code
 COPY --chown=$USERNAME:$USERNAME image/ /home/tilt/image/
+
 # Set build-time environment variables
 ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+
+# Set working directory to image/nextjs for Next.js builds
+WORKDIR $HOME/image/nextjs
 
 # Add build argument for development mode
 ARG DEV_MODE=false
 RUN if [ "$DEV_MODE" = "false" ]; then \
-        echo "Production mode - using included source code"; \
-        cp -r /home/tilt/image/nextjs/. /home/tilt/nextjs/ && \
-        cp -r /home/tilt/image/agent/. /home/tilt/agent/; \
+        echo "Production mode - building Next.js in place"; \
+        npm install --legacy-peer-deps && npm run build; \
     else \
-        echo "Development mode - will use mounted volumes for live reloading"; \
+        echo "Development mode - will install dependencies and run dev server at runtime"; \
         mkdir -p .next; \
     fi
 

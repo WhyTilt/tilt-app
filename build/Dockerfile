@@ -189,7 +189,7 @@ RUN if [ "$DEV_MODE" = "false" ]; then \
         cp -r /home/tilt/image/agent/. /home/tilt/agent/ && \
         chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent; \
     else \
-        echo "Development mode - copying source code from repositories"; \
+        echo "Development mode - will install dependencies and run dev server at runtime"; \
         cp -r /home/tilt/staging/tilt-frontend/. /home/tilt/nextjs/ && \
         cp -r /home/tilt/staging/tilt-agent/. /home/tilt/agent/ && \
         mkdir -p .next && chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent .next; \

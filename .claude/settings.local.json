@@ -132,7 +132,8 @@
       "Bash(groups $USER)",
       "Bash(getent:*)",
       "Bash(./release.sh)",
-      "Bash(journalctl:*)"
+      "Bash(journalctl:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

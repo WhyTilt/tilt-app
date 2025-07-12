@@ -48,28 +48,29 @@ echo "MongoDB already running from entrypoint.sh..." | tee -a "$LOGS_DIR/startup
 
 # Start Python API service with logging
 echo "Starting Python API service..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/tilt
-export PYTHONPATH=/home/tilt:$PYTHONPATH
-python -m agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
+cd /home/tilt/image/agent
+export PYTHONPATH=/home/tilt/image:$PYTHONPATH
+python -m api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
 API_PID=$!
 
 # Start Next.js app on port 3001 (main interface) with logging
 echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/tilt/nextjs
+cd /home/tilt/image/nextjs
 
 # Ensure .next directory exists with correct permissions
-sudo mkdir -p .next && sudo chown -R tilt:tilt .next
+mkdir -p .next && chown -R tilt:tilt .next 2>/dev/null || true
+# Fix permissions for image directory
+chown -R tilt:tilt /home/tilt/image/nextjs 2>/dev/null || true
+
+# Install dependencies if node_modules doesn't exist or is empty
+if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
+    echo "Installing Next.js dependencies..." | tee -a "$LOGS_DIR/startup.log"
+    npm install --legacy-peer-deps 2>&1 | tee -a "$LOGS_DIR/npm-install.txt"
+fi
 
 # Check if running in development mode
 if [ "$DEV_MODE" = "true" ]; then
     echo "Running Next.js in development mode with hot reloading..." | tee -a "$LOGS_DIR/startup.log"
-    # Fix permissions for mounted directory
-    sudo chown -R tilt:tilt /home/tilt/nextjs
-    # Install dependencies if node_modules doesn't exist or is empty
-    if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules)" ]; then
-        echo "Installing Next.js dependencies in dev mode..." | tee -a "$LOGS_DIR/startup.log"
-        npm install --legacy-peer-deps 2>&1 | tee -a "$LOGS_DIR/npm-install.txt"
-    fi
     npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
