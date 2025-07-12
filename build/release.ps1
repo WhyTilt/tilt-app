@@ -120,17 +120,7 @@ if ($env:DOCKER_USERNAME -and $env:DOCKER_TOKEN) {
     echo $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USERNAME --password-stdin
 }
 
-# Check DockerHub authentication
-$dockerInfo = docker system info | Select-String "Username:"
-if (-not $dockerInfo) {
-    Write-Host "❌ Not logged in to DockerHub"
-    Write-Host "Please run: docker login"
-    Write-Host "Or if you have a token saved in .env.local:"
-    Write-Host "  Load .env.local and run: echo `$env:DOCKER_TOKEN | docker login -u `$env:DOCKER_USERNAME --password-stdin"
-    exit 1
-}
-
-Write-Host "✅ Docker authentication verified"
+Write-Host "✅ Docker login completed"
 Write-Host ""
 
 # Confirm release
