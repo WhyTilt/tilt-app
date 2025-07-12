@@ -11,19 +11,19 @@ ARCH=$(uname -m)
 echo "Detected platform: $PLATFORM"
 echo "Detected architecture: $ARCH"
 
-# Determine Docker image tag based on platform/arch
+# Determine Docker image repo based on platform/arch
 case "$PLATFORM" in
     "Linux")
         if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
-            IMAGE_TAG="tilt-dev-arm64"
+            IMAGE_TAG="whytilt/tilt-app-arm64"
             echo "Using ARM64 Linux image"
         else
-            IMAGE_TAG="tilt-dev-nix"
+            IMAGE_TAG="whytilt/tilt-app-linux"
             echo "Using x86_64 Linux image"
         fi
         ;;
     "Darwin")
-        IMAGE_TAG="tilt-dev-arm64"
+        IMAGE_TAG="whytilt/tilt-app-arm64"
         echo "Using Mac ARM64 image (Apple Silicon)"
         ;;
     *)
@@ -53,11 +53,9 @@ if [ -f ".env.local" ]; then
     export $(grep -v '^#' .env.local | xargs)
 fi
 
-# Check if dev image exists
-if [[ "$(docker images -q $IMAGE_TAG:latest 2> /dev/null)" == "" ]]; then
-    echo "Development image not found. Building..."
-    ./build/build.sh dev
-fi
+# Pull latest image from Docker Hub
+echo "Pulling latest Tilt image from Docker Hub..."
+docker pull $IMAGE_TAG:latest
 
 # Create necessary directories
 mkdir -p ./db_data

@@ -48,34 +48,7 @@ if "!MODE!"=="dev" (
 if "!MODE!"=="dev" (
     echo - Frontend will use 'npm run dev' for hot reloading
     echo - Python will run with live code reloading
-    echo - Source code will be mounted as volumes
-    
-    REM Clean up any existing directories/symlinks
-    if exist ..\image\nextjs (
-        echo Removing existing nextjs...
-        rmdir /s /q ..\image\nextjs
-    )
-    if exist ..\image\agent (
-        echo Removing existing agent...
-        rmdir /s /q ..\image\agent
-    )
-    
-    REM Clone repositories in parent directory if they don't exist
-    if not exist ..\..\tilt-frontend (
-        echo Cloning tilt-frontend...
-        cd ..\.. && git clone https://github.com/WhyTilt/tilt-frontend.git && cd app\build
-    )
-    if not exist ..\..\tilt-agent (
-        echo Cloning tilt-agent...
-        cd ..\.. && git clone https://github.com/WhyTilt/tilt-agent.git && cd app\build
-    )
-    
-    REM Create junction links (Windows equivalent of symlinks)
-    echo Creating junction links...
-    mklink /J ..\image\nextjs ..\..\..\tilt-frontend
-    mklink /J ..\image\agent ..\..\..\tilt-agent
-    
-    echo Junction links created - you can now edit code directly in ..\..\tilt-frontend and ..\..\tilt-agent
+    echo - Source code is already included in the image directory
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
@@ -96,49 +69,19 @@ if "!MODE!"=="dev" (
     mkdir ..\db_data
     echo Database cleared
     
-    REM Set up repositories for production build using submodules
-    echo Setting up repositories for production build using submodules...
-    
-    REM Clean up any existing directories/symlinks
-    if exist ..\image\nextjs (
-        echo Removing existing nextjs...
-        rmdir /s /q ..\image\nextjs
-    )
-    if exist ..\image\agent (
-        echo Removing existing agent...
-        rmdir /s /q ..\image\agent
-    )
-    
-    REM Initialize and update submodules for production
-    echo Setting up git submodules for production...
-    
-    REM Remove from git index if they exist
-    cd .. && git rm --cached image\nextjs 2>nul || echo >nul
-    git rm --cached image\agent 2>nul || echo >nul
-    
-    REM Add submodules (force add since they're in .gitignore)
-    git submodule add -f https://github.com/WhyTilt/tilt-frontend.git image\nextjs || echo Submodule image\nextjs already exists
-    git submodule add -f https://github.com/WhyTilt/tilt-agent.git image\agent || echo Submodule image\agent already exists
-    
-    REM Update submodules to latest
-    git submodule update --init --recursive && cd build
-    
     REM Build Next.js for production
     echo Building Next.js for production...
-    cd ..\image\nextjs
-    npm install --legacy-peer-deps
-    npm run build
-    cd ..\..\build
+    cd ..\image\nextjs && npm install --legacy-peer-deps && npm run build && cd ..\..\build
     
     set DEV_MODE_ARG=false
 )
 
 REM Build with BuildKit for better caching
 echo Building Docker image ^(!IMAGE_TAG!^)...
-cd ..\.. && set DOCKER_BUILDKIT=1 && docker build ^
+cd ..\.. && set DOCKER_BUILDKIT=1&& docker build ^
     --target app ^
     --tag !IMAGE_TAG!:latest ^
-    --file app\!DOCKERFILE! ^
+    --file app\build\!DOCKERFILE! ^
     --build-arg DEV_MODE=!DEV_MODE_ARG! ^
     --build-arg DISPLAY_NUM=1 ^
     --build-arg HEIGHT=768 ^

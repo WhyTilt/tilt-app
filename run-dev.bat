@@ -6,7 +6,7 @@ echo === Running Tilt (Development Mode) ===
 echo Detected platform: Windows x86_64
 echo Using Windows development image
 
-set IMAGE_TAG=tilt-dev-x86
+set IMAGE_TAG=whytilt/tilt-app-windows
 
 REM Stop any existing containers using port 3001
 echo Checking for existing containers on port 3001...
@@ -28,12 +28,9 @@ if exist .env.local (
     )
 )
 
-REM Check if dev image exists
-docker images -q !IMAGE_TAG!:latest > nul 2>&1
-if !errorlevel! neq 0 (
-    echo Development image not found. Building...
-    call build\build.bat dev
-)
+REM Pull latest image from Docker Hub
+echo Pulling latest Tilt image from Docker Hub...
+docker pull !IMAGE_TAG!:latest
 
 REM Create necessary directories
 if not exist db_data mkdir db_data
@@ -57,9 +54,6 @@ docker run ^
     -v "%cd%\user_data\Downloads":/home/tilt/Downloads ^
     -v "%cd%\logs":/home/tilt/logs ^
     -v "%cd%\db_data":/data/db ^
-    -v "%cd%\..\tilt-frontend":/home/tilt/nextjs ^
-    -v "%cd%\..\tilt-agent":/home/tilt/agent ^
-    -v "%cd%\image":/home/tilt/image ^
     -p 5900:5900 ^
     -p 3001:3001 ^
     -p 6080:6080 ^

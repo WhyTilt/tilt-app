@@ -6,7 +6,7 @@ echo === Running Tilt (Production Mode) ===
 echo Detected platform: Windows x86_64
 echo Using Windows production image
 
-set IMAGE_TAG=tilt-app-x86
+set IMAGE_TAG=whytilt/tilt-app-windows
 
 REM Stop any existing containers using port 3001
 echo Checking for existing containers on port 3001...
@@ -28,12 +28,9 @@ if exist .env.local (
     )
 )
 
-REM Check if prod image exists
-docker images -q !IMAGE_TAG!:latest > nul 2>&1
-if !errorlevel! neq 0 (
-    echo Production image not found. Building...
-    call build\build.bat prod
-)
+REM Pull latest image from Docker Hub
+echo Pulling latest Tilt image from Docker Hub...
+docker pull !IMAGE_TAG!:latest
 
 REM Create necessary directories
 if not exist db_data mkdir db_data

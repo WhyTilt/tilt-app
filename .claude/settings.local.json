@@ -133,7 +133,9 @@
       "Bash(getent:*)",
       "Bash(./release.sh)",
       "Bash(journalctl:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(./release.sh:*)",
+      "Bash(./build/release.sh:*)"
     ],
     "deny": []
   }

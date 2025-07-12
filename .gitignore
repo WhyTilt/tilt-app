@@ -1,8 +1,5 @@
-# Cloned repositories and symlinks - not tracked in git
-image/nextjs/
-image/nextjs
-image/agent/
-image/agent
+# Legacy comment - these directories are now part of the consolidated repo
+# image/nextjs/ and image/agent/ are now tracked in git
 
 .env*
 dev-vals.txt

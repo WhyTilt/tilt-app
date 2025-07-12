@@ -100,10 +100,10 @@ if [ "$MODE" = "dev" ]; then
     
     # Install npm dependencies for development
     echo "Installing npm dependencies for development..."
-    (cd image/nextjs && npm install)
+    (cd ../image/nextjs && npm install)
     
     # Database directory should be ready
-    mkdir -p db_data
+    mkdir -p ../db_data
     
     DEV_MODE_ARG="true"
 else
@@ -113,25 +113,25 @@ else
     
     # Clear database for production
     echo "Clearing database collections for production..."
-    if [ -d "db_data" ]; then
+    if [ -d "../db_data" ]; then
         # Try to remove with regular permissions first
-        rm -rf db_data 2>/dev/null || {
+        rm -rf ../db_data 2>/dev/null || {
             echo "Note: Some database files may have restricted permissions - they will be overwritten on next run"
         }
     fi
-    mkdir -p db_data
+    mkdir -p ../db_data
     echo "Database cleared"
     
     # Build Next.js for production
     echo "Building Next.js for production..."
-    (cd image/nextjs && npm install --legacy-peer-deps && npm run build)
+    (cd ../image/nextjs && npm install --legacy-peer-deps && npm run build)
     
     DEV_MODE_ARG="false"
 fi
 
 # Build with BuildKit for better caching
 echo "Building Docker image ($IMAGE_TAG)..."
-DOCKER_BUILDKIT=1 docker build \
+cd .. && DOCKER_BUILDKIT=1 docker build \
     $PLATFORM_ARG \
     --target app \
     --tag $IMAGE_TAG:latest \
