@@ -8,10 +8,18 @@ mkdir -p ./logs
 
 # Parse command line arguments
 DEV_MODE=false
+INTERACTIVE_MODE=true
+
 for arg in "$@"; do
     case $arg in
         --dev)
             DEV_MODE=true
+            INTERACTIVE_MODE=false
+            shift
+            ;;
+        --prod)
+            DEV_MODE=false
+            INTERACTIVE_MODE=false
             shift
             ;;
         *)
@@ -19,6 +27,27 @@ for arg in "$@"; do
             ;;
     esac
 done
+
+# If no mode specified, prompt user
+if [ "$INTERACTIVE_MODE" = "true" ]; then
+    echo "Select mode:"
+    echo "1) Development mode (--dev)"
+    echo "2) Production mode (--prod)"
+    read -p "Enter your choice (1 or 2): " choice
+    
+    case $choice in
+        1)
+            DEV_MODE=true
+            ;;
+        2)
+            DEV_MODE=false
+            ;;
+        *)
+            echo "Invalid choice. Defaulting to production mode."
+            DEV_MODE=false
+            ;;
+    esac
+fi
 
 # Load .env.local file if it exists
 if [ -f ".env.local" ]; then
@@ -47,6 +76,14 @@ DOCKER_ENV_VARS="-e DEV_MODE=$DEV_MODE"
 
 # Create db_data directory if it doesn't exist
 mkdir -p ./db_data
+
+# Stop and remove any existing Tilt containers
+echo "Stopping any existing Tilt containers..."
+# Stop all containers from tilt images
+docker ps -q --filter "ancestor=tilt-dev-nix" --filter "ancestor=tilt-app-nix" | xargs -r docker stop
+docker ps -aq --filter "ancestor=tilt-dev-nix" --filter "ancestor=tilt-app-nix" | xargs -r docker rm
+# Also clean up any containers that might be using our ports
+docker ps -q | xargs -r -I {} sh -c 'docker port {} 2>/dev/null | grep -q ":3001\|:8000\|:5900\|:6080" && docker stop {} || true'
 
 # Get absolute path for cross-platform compatibility
 # Use realpath if available (Linux/WSL), otherwise use pwd (macOS/basic systems)

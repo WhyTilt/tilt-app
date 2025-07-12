@@ -26,6 +26,12 @@ echo "Starting tint2 panel..." | tee -a "$LOGS_DIR/startup.log"
 # Wait a moment for desktop components to initialize
 sleep 3
 
+# Auto-start Chrome with remote debugging for automation
+echo "Starting Chrome with remote debugging..." | tee -a "$LOGS_DIR/startup.log"
+DISPLAY=:${DISPLAY_NUM} chromium-browser --no-first-run --incognito --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir=/tmp/chrome_profile --no-sandbox --disable-dev-shm-usage 2>&1 | tee -a "$LOGS_DIR/chrome.log" &
+CHROME_PID=$!
+sleep 2  # Give Chrome time to start
+
 # Start x11vnc (depends on Xvfb being ready)
 echo "Starting x11vnc..." | tee -a "$LOGS_DIR/startup.log"
 ./image/x11vnc_startup.sh 2>&1 | tee -a "$LOGS_DIR/x11vnc.log" &
@@ -82,7 +88,10 @@ mongosh --eval "use tilt; print('Task count: ' + db.tasks.countDocuments()); db.
 # Function to handle cleanup
 cleanup() {
     echo "Shutting down services..." | tee -a "$LOGS_DIR/startup.log"
-    kill $MONGO_PID $API_PID $NEXTJS_PID 2>/dev/null || true
+    kill $MONGO_PID $API_PID $NEXTJS_PID $CHROME_PID 2>/dev/null || true
+    # Clean up Chrome processes
+    pkill chrome 2>/dev/null || true
+    pkill google-chrome 2>/dev/null || true
     # Clean up MongoDB temporary database files
     pkill mongod 2>/dev/null || true
     rm -rf /tmp/mongodb-ephemeral-* 2>/dev/null || true
