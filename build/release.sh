@@ -31,15 +31,34 @@ show_usage() {
 # Parse command line arguments
 VERSION=""
 if [ $# -eq 0 ]; then
-    # Get version from git tag
-    VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -z "$VERSION" ]; then
+    # Get latest version from git tag and auto-increment
+    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    if [ -z "$LATEST_TAG" ]; then
         echo "❌ No git tags found and no version specified"
         echo "Please create a git tag or specify a version"
         show_usage
         exit 1
     fi
-    echo "Using latest git tag: $VERSION"
+    
+    # Auto-increment patch version
+    if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+        MAJOR=${BASH_REMATCH[1]}
+        MINOR=${BASH_REMATCH[2]}
+        PATCH=${BASH_REMATCH[3]}
+        NEW_PATCH=$((PATCH + 1))
+        VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+        echo "Latest git tag: $LATEST_TAG"
+        echo "Auto-incrementing to: $VERSION"
+        
+        # Create and push the new tag
+        git tag -a "$VERSION" -m "Release $VERSION: Auto-incremented patch version"
+        git push origin "$VERSION"
+        echo "✅ Created and pushed new tag: $VERSION"
+    else
+        echo "❌ Latest tag '$LATEST_TAG' doesn't follow semantic versioning"
+        echo "Please use format vX.Y.Z"
+        exit 1
+    fi
 elif [ $# -eq 1 ]; then
     case $1 in
         -h|--help|help) show_usage; exit 0 ;;
