@@ -52,7 +52,7 @@ if "!MODE!"=="dev" (
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
-    pushd ..\image\nextjs
+    pushd "%~dp0..\image\nextjs"
     npm install
     popd
     
@@ -73,7 +73,7 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
-    pushd ..\image\nextjs
+    pushd "%~dp0..\image\nextjs"
     npm install --legacy-peer-deps
     npm run build
     popd
