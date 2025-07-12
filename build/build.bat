@@ -52,15 +52,8 @@ if "!MODE!"=="dev" (
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
-    echo Current directory: %CD%
-    echo Attempting to change to: ..\image\nextjs
-    if not exist "..\image\nextjs" (
-        echo ERROR: Directory ..\image\nextjs does not exist
-        exit /b 1
-    )
     set ORIGINAL_DIR=%CD%
     cd ..\image\nextjs
-    echo Now in directory: %CD%
     npm install
     cd "%ORIGINAL_DIR%"
     
@@ -81,28 +74,8 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
-    echo Current directory: %CD%
-    echo Attempting to change to: ..\image\nextjs
-    dir ..\image >nul 2>&1
-    if !errorlevel! neq 0 (
-        echo ERROR: Directory ..\image does not exist
-        echo Available directories in ..:
-        dir ..
-        exit /b 1
-    )
-    if not exist "..\image\nextjs" (
-        echo ERROR: Directory ..\image\nextjs does not exist
-        echo Available directories in ..\image:
-        dir ..\image
-        exit /b 1
-    )
     set ORIGINAL_DIR=%CD%
     cd ..\image\nextjs
-    if !errorlevel! neq 0 (
-        echo ERROR: Failed to change directory to ..\image\nextjs
-        exit /b 1
-    )
-    echo Now in directory: %CD%
     npm install --legacy-peer-deps
     npm run build
     cd "%ORIGINAL_DIR%"
