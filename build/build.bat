@@ -84,7 +84,9 @@ if "!MODE!"=="dev" (
     echo DEBUG: Running npm install:
     npm install --legacy-peer-deps
     echo DEBUG: Running npm run build:
+    echo DEBUG: PWD just before npm run build: !CD!
     npm run build
+    echo DEBUG: PWD after npm run build: !CD!
     echo DEBUG: Returning to: %ORIGINAL_DIR%
     cd "!ORIGINAL_DIR!"
     echo DEBUG: Final dir: %CD%
