@@ -52,9 +52,14 @@ if "!MODE!"=="dev" (
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
-    pushd "%~dp0..\image\nextjs"
+    set ORIGINAL_DIR=%CD%
+    cd /d "%~dp0..\image\nextjs"
+    if !errorlevel! neq 0 (
+        echo ERROR: Could not change to nextjs directory
+        exit /b 1
+    )
     npm install
-    popd
+    cd /d "%ORIGINAL_DIR%"
     
     REM Create db_data directory if it doesn't exist
     if not exist ..\db_data mkdir ..\db_data
@@ -73,10 +78,15 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
-    pushd "%~dp0..\image\nextjs"
+    set ORIGINAL_DIR=%CD%
+    cd /d "%~dp0..\image\nextjs"
+    if !errorlevel! neq 0 (
+        echo ERROR: Could not change to nextjs directory
+        exit /b 1
+    )
     npm install --legacy-peer-deps
     npm run build
-    popd
+    cd /d "%ORIGINAL_DIR%"
     
     set DEV_MODE_ARG=false
 )
