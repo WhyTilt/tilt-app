@@ -52,9 +52,9 @@ if "!MODE!"=="dev" (
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
-    cd ..\image\nextjs
+    pushd ..\image\nextjs
     npm install
-    cd ..\..\build
+    popd
     
     REM Create db_data directory if it doesn't exist
     if not exist ..\db_data mkdir ..\db_data
@@ -73,10 +73,10 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
-    cd ..\image\nextjs
+    pushd ..\image\nextjs
     npm install --legacy-peer-deps
     npm run build
-    cd ..\..\build
+    popd
     
     set DEV_MODE_ARG=false
 )
