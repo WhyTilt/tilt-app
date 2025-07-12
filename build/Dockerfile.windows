@@ -166,12 +166,12 @@ RUN npm install --legacy-peer-deps
 # Stage 9: Application layer (final)
 FROM nodejs-deps AS app
 
-# Create directories for mounted volumes
-RUN mkdir -p $HOME/agent $HOME/nextjs $HOME/image && \
-    chown -R $USERNAME:$USERNAME $HOME/agent $HOME/nextjs $HOME/image
+# Create directories for mounted volumes (only image directory needed)
+RUN mkdir -p $HOME/image && \
+    chown -R $USERNAME:$USERNAME $HOME/image
 
 # Build Next.js app (conditionally)  
-WORKDIR $HOME/nextjs
+WORKDIR $HOME
 
 # Copy image directory with scripts and configs first
 COPY --chown=$USERNAME:$USERNAME image/ /home/tilt/image/
@@ -181,10 +181,8 @@ ENV NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 # Add build argument for development mode
 ARG DEV_MODE=false
 RUN if [ "$DEV_MODE" = "false" ]; then \
-        echo "Production mode - using included source code"; \
-        cp -r /home/tilt/image/nextjs/. /home/tilt/nextjs/ && \
-        cp -r /home/tilt/image/agent/. /home/tilt/agent/ && \
-        chown -R $USERNAME:$USERNAME /home/tilt/nextjs /home/tilt/agent; \
+        echo "Production mode - using included source code in image directory"; \
+        chown -R $USERNAME:$USERNAME /home/tilt/image; \
     else \
         echo "Development mode - will use mounted volumes"; \
         mkdir -p .next && chown -R $USERNAME:$USERNAME .next; \
