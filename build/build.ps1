@@ -123,8 +123,4 @@ Set-Location "build"
 
 Write-Host "✅ $Mode build completed successfully!"
 Write-Host "Image tagged as: $ImageTag`:latest"
-if ($Mode -eq "dev") {
-    Write-Host "Use '..\run-dev.ps1' to start the development container"
-} else {
-    Write-Host "Use '..\run-prod.ps1' to start the production container"
-}
+Write-Host "Use '..\run.ps1 $Mode' to start the $Mode container"

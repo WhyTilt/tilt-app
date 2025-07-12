@@ -1,8 +1,43 @@
-# Tilt Production Runner - PowerShell
+# Tilt Runner - PowerShell
+param(
+    [Parameter(Position=0)]
+    [ValidateSet("dev", "development", "prod", "production", "help", "-h", "--help")]
+    [string]$Mode = "prod"
+)
 
-Write-Host "=== Running Tilt (Production Mode) ==="
+# Function to show usage
+function Show-Usage {
+    Write-Host "Usage: .\run.ps1 [dev|prod]"
+    Write-Host ""
+    Write-Host "Run modes:"
+    Write-Host "  dev   - Development mode (npm run dev, hot reload)"
+    Write-Host "  prod  - Production mode (optimized, default)"
+    Write-Host ""
+    Write-Host "Examples:"
+    Write-Host "  .\run.ps1 dev    # Run in development mode"
+    Write-Host "  .\run.ps1 prod   # Run in production mode"
+    Write-Host "  .\run.ps1        # Run in production mode (default)"
+}
+
+# Handle help
+if ($Mode -in @("help", "-h", "--help")) {
+    Show-Usage
+    exit 0
+}
+
+# Normalize mode
+if ($Mode -in @("development")) { $Mode = "dev" }
+if ($Mode -in @("production")) { $Mode = "prod" }
+
+if ($Mode -notin @("dev", "prod")) {
+    Write-Host "Invalid mode: $Mode"
+    Show-Usage
+    exit 1
+}
+
+Write-Host "=== Running Tilt ($Mode Mode) ==="
 Write-Host "Detected platform: Windows x86_64"
-Write-Host "Using Windows production image"
+Write-Host "Using Windows $Mode image"
 
 $ImageTag = "whytilt/tilt-app-windows"
 
@@ -43,12 +78,26 @@ if (-not (Test-Path "db_data")) {
     New-Item -ItemType Directory -Path "db_data" | Out-Null
 }
 
-Write-Host "Starting production container ($ImageTag)..."
-Write-Host "- Frontend: Pre-built and optimized"
-Write-Host "- Backend: Production configuration"
+# Fix MongoDB permissions on Windows (run temporary container to set ownership)
+Write-Host "Fixing MongoDB database permissions..."
+docker run --rm `
+    -v "${PWD}\db_data:/data/db" `
+    "$ImageTag`:latest" `
+    bash -c "chown -R mongodb:mongodb /data/db && chmod -R 755 /data/db"
+
+Write-Host "Starting $Mode container ($ImageTag)..."
+if ($Mode -eq "dev") {
+    Write-Host "- Frontend: npm run dev (hot reloading)"
+    Write-Host "- Backend: Python with live reloading"
+    $DevModeArg = "true"
+} else {
+    Write-Host "- Frontend: Pre-built and optimized"
+    Write-Host "- Backend: Production configuration"
+    $DevModeArg = "false"
+}
 
 docker run `
-    -e DEV_MODE=false `
+    -e "DEV_MODE=$DevModeArg" `
     -v "${PWD}\user_data:/home/tilt/user_data" `
     -v "${PWD}\user_data\.mozilla:/home/tilt/.mozilla" `
     -v "${PWD}\user_data\.config\gtk-3.0:/home/tilt/.config/gtk-3.0" `
@@ -70,7 +119,7 @@ docker run `
     -it "$ImageTag`:latest"
 
 Write-Host ""
-Write-Host "➡️  Production server started!"
+Write-Host "➡️  $Mode server started!"
 Write-Host "➡️  Frontend: http://localhost:3001"
 Write-Host "➡️  Backend API: http://localhost:8000"
 Write-Host "➡️  VNC Web: http://localhost:6080"
