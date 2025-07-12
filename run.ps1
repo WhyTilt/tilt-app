@@ -111,6 +111,7 @@ docker run `
     -v "${PWD}\user_data\Downloads:/home/tilt/Downloads" `
     -v "${PWD}\logs:/home/tilt/logs" `
     -v "${PWD}\db_data:/data/db" `
+    -v "${PWD}\image:/home/tilt/image" `
     -p 5900:5900 `
     -p 3001:3001 `
     -p 6080:6080 `
