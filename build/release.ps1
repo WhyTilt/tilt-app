@@ -93,6 +93,7 @@ if (Test-Path ".env.local") {
     Get-Content ".env.local" | ForEach-Object {
         if ($_ -notmatch "^#" -and $_ -match "=") {
             $name, $value = $_ -split "=", 2
+            Write-Host "DEBUG: Setting $name"
             Set-Item -Path "env:$name" -Value $value
         }
     }
@@ -101,9 +102,22 @@ if (Test-Path ".env.local") {
     Get-Content "../.env.local" | ForEach-Object {
         if ($_ -notmatch "^#" -and $_ -match "=") {
             $name, $value = $_ -split "=", 2
+            Write-Host "DEBUG: Setting $name"
             Set-Item -Path "env:$name" -Value $value
         }
     }
+} else {
+    Write-Host "DEBUG: No .env.local found in current or parent directory"
+    Write-Host "DEBUG: Current directory: $PWD"
+    Write-Host "DEBUG: Checking paths:"
+    Write-Host "  .env.local exists: $(Test-Path '.env.local')"
+    Write-Host "  ../.env.local exists: $(Test-Path '../.env.local')"
+}
+
+# Try Docker login with environment variables if they exist
+if ($env:DOCKER_USERNAME -and $env:DOCKER_TOKEN) {
+    Write-Host "Attempting Docker login with environment variables..."
+    echo $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USERNAME --password-stdin
 }
 
 # Check DockerHub authentication
