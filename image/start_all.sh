@@ -48,9 +48,9 @@ echo "MongoDB already running from entrypoint.sh..." | tee -a "$LOGS_DIR/startup
 
 # Start Python API service with logging
 echo "Starting Python API service..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/tilt/image/agent
+cd /home/tilt/image
 export PYTHONPATH=/home/tilt/image:$PYTHONPATH
-python -m api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
+python -m agent.api_service.main 2>&1 | tee -a "$LOGS_DIR/py-api-server.txt" &
 API_PID=$!
 
 # Start Next.js app on port 3001 (main interface) with logging
