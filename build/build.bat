@@ -74,11 +74,16 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
+    echo DEBUG: Current dir before cd: %CD%
     set ORIGINAL_DIR=%CD%
+    echo DEBUG: Saved original dir: %ORIGINAL_DIR%
     cd ..\image\nextjs
+    echo DEBUG: Current dir after cd: %CD%
     npm install --legacy-peer-deps
     npm run build
+    echo DEBUG: Returning to: %ORIGINAL_DIR%
     cd "%ORIGINAL_DIR%"
+    echo DEBUG: Final dir: %CD%
     
     set DEV_MODE_ARG=false
 )
