@@ -79,11 +79,15 @@ if "!MODE!"=="dev" (
     echo DEBUG: Saved original dir: !ORIGINAL_DIR!
     cd ..\image\nextjs
     echo DEBUG: Current dir after cd: !CD!
+    echo DEBUG: Contents of current dir:
+    dir
+    echo DEBUG: Running npm install:
     npm install --legacy-peer-deps
+    echo DEBUG: Running npm run build:
     npm run build
-    echo DEBUG: Returning to: !ORIGINAL_DIR!
+    echo DEBUG: Returning to: %ORIGINAL_DIR%
     cd "!ORIGINAL_DIR!"
-    echo DEBUG: Final dir: !CD!
+    echo DEBUG: Final dir: %CD%
     
     set DEV_MODE_ARG=false
 )
