@@ -131,7 +131,8 @@
       "Bash(docker:*)",
       "Bash(groups $USER)",
       "Bash(getent:*)",
-      "Bash(./release.sh)"
+      "Bash(./release.sh)",
+      "Bash(journalctl:*)"
     ],
     "deny": []
   }

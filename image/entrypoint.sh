@@ -3,11 +3,9 @@ set -e
 
 # Start MongoDB service with persistent data directory
 echo "Starting MongoDB..."
-sudo mkdir -p /data/db
-sudo chown -R mongodb:mongodb /data/db
-sudo cp ./image/mongod.conf /tmp/mongod.conf
-sudo chown mongodb:mongodb /tmp/mongod.conf
-sudo -u mongodb mongod --config /tmp/mongod.conf &
+mkdir -p /data/db
+cp ./image/mongod.conf /tmp/mongod.conf
+mongod --config /tmp/mongod.conf &
 MONGODB_PID=$!
 
 # Wait for MongoDB to be ready

@@ -120,7 +120,7 @@ docker run \
     -p 6080:6080 \
     -p 8000:8000 \
     -p 27017:27017 \
-    -d "$IMAGE_NAME"
+    "$IMAGE_NAME"
 
 echo ""
-echo "➡️  Open http://localhost:3001 for Tilt"
+echo "Container stopped."
