@@ -73,10 +73,12 @@ if (Test-Path ".env.local") {
 Write-Host "Pulling latest Tilt image from Docker Hub..."
 docker pull "$ImageTag`:latest"
 
-# Create necessary directories
-if (-not (Test-Path "db_data")) {
-    New-Item -ItemType Directory -Path "db_data" | Out-Null
+# Create/recreate db_data directory with clean permissions
+Write-Host "Setting up database directory..."
+if (Test-Path "db_data") {
+    Remove-Item "db_data" -Recurse -Force
 }
+New-Item -ItemType Directory -Path "db_data" | Out-Null
 
 # Fix MongoDB permissions on Windows (run temporary container to set ownership)
 Write-Host "Fixing MongoDB database permissions..."
