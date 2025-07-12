@@ -74,15 +74,6 @@ if [ "$DEV_MODE" = "true" ]; then
     npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
-    if [ ! -d ".next" ] || [ -z "$(ls -A .next 2>/dev/null)" ]; then
-        echo "Building Next.js for production..." | tee -a "$LOGS_DIR/startup.log"
-        npm run build 2>&1 | tee -a "$LOGS_DIR/nextjs-build.txt" &
-        BUILD_PID=$!
-        # Wait for build to complete before starting
-        wait $BUILD_PID
-    else
-        echo "Next.js already built, skipping build step" | tee -a "$LOGS_DIR/startup.log"
-    fi
     npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 fi
 NEXTJS_PID=$!
