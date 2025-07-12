@@ -52,10 +52,10 @@ if "!MODE!"=="dev" (
     
     REM Install npm dependencies for development
     echo Installing npm dependencies for development...
-    set ORIGINAL_DIR=%CD%
+    set ORIGINAL_DIR=!CD!
     cd ..\image\nextjs
     npm install
-    cd "%ORIGINAL_DIR%"
+    cd "!ORIGINAL_DIR!"
     
     REM Create db_data directory if it doesn't exist
     if not exist ..\db_data mkdir ..\db_data
@@ -74,16 +74,16 @@ if "!MODE!"=="dev" (
     
     REM Build Next.js for production
     echo Building Next.js for production...
-    echo DEBUG: Current dir before cd: %CD%
-    set ORIGINAL_DIR=%CD%
-    echo DEBUG: Saved original dir: %ORIGINAL_DIR%
+    echo DEBUG: Current dir before cd: !CD!
+    set ORIGINAL_DIR=!CD!
+    echo DEBUG: Saved original dir: !ORIGINAL_DIR!
     cd ..\image\nextjs
-    echo DEBUG: Current dir after cd: %CD%
+    echo DEBUG: Current dir after cd: !CD!
     npm install --legacy-peer-deps
     npm run build
-    echo DEBUG: Returning to: %ORIGINAL_DIR%
-    cd "%ORIGINAL_DIR%"
-    echo DEBUG: Final dir: %CD%
+    echo DEBUG: Returning to: !ORIGINAL_DIR!
+    cd "!ORIGINAL_DIR!"
+    echo DEBUG: Final dir: !CD!
     
     set DEV_MODE_ARG=false
 )
