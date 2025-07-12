@@ -96,32 +96,7 @@ esac
 if [ "$MODE" = "dev" ]; then
     echo "- Frontend will use 'npm run dev' for hot reloading"
     echo "- Python will run with live code reloading"
-    echo "- Source code will be mounted as volumes"
-    
-    # Set up repositories for development using submodules (preserve tracking)
-    echo "Setting up repositories for development using submodules..."
-    
-    # Initialize and update submodules if they don't exist
-    if [ ! -d "image/nextjs/.git" ] || [ ! -d "image/agent/.git" ]; then
-        echo "Initializing submodules for development..."
-        
-        # Remove from git index if they exist as regular directories
-        git rm --cached image/nextjs 2>/dev/null || true
-        git rm --cached image/agent 2>/dev/null || true
-        
-        # Remove existing directories/symlinks
-        rm -rf image/nextjs image/agent 2>/dev/null || true
-        
-        # Add submodules
-        git submodule add -f git@github.com:WhyTilt/tilt-frontend.git image/nextjs || echo "Submodule image/nextjs already exists"
-        git submodule add -f git@github.com:WhyTilt/tilt-agent.git image/agent || echo "Submodule image/agent already exists"
-        
-        # Update submodules to latest
-        git submodule update --init --recursive
-    else
-        echo "Submodules already exist - updating to latest..."
-        git submodule update --remote --recursive
-    fi
+    echo "- Source code is already included in the image directory"
     
     # Install npm dependencies for development
     echo "Installing npm dependencies for development..."
@@ -146,41 +121,6 @@ else
     fi
     mkdir -p db_data
     echo "Database cleared"
-    
-    # Set up repositories for production build using submodules
-    echo "Setting up repositories for production build using submodules..."
-    
-    # Clean up any existing directories/symlinks
-    if [ -L "image/nextjs" ] || [ -d "image/nextjs" ]; then
-        echo "Removing existing nextjs..."
-        rm -rf image/nextjs
-    fi
-    if [ -L "image/agent" ] || [ -d "image/agent" ]; then
-        echo "Removing existing agent..."
-        rm -rf image/agent
-    fi
-    
-    # Check if repositories exist in parent directory first
-    if [ -d "../tilt-frontend" ] && [ -d "../tilt-agent" ]; then
-        echo "Using existing repositories from parent directory..."
-        # Copy repositories to image directory
-        cp -r ../tilt-frontend image/nextjs
-        cp -r ../tilt-agent image/agent
-    else
-        # Initialize and update submodules for production
-        echo "Setting up git submodules for production..."
-        
-        # Remove from git index if they exist
-        git rm --cached image/nextjs 2>/dev/null || true
-        git rm --cached image/agent 2>/dev/null || true
-        
-        # Add submodules (force add since they're in .gitignore)
-        git submodule add -f git@github.com:WhyTilt/tilt-frontend.git image/nextjs || echo "Submodule image/nextjs already exists"
-        git submodule add -f git@github.com:WhyTilt/tilt-agent.git image/agent || echo "Submodule image/agent already exists"
-        
-        # Update submodules to latest
-        git submodule update --init --recursive
-    fi
     
     # Build Next.js for production
     echo "Building Next.js for production..."

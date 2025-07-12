@@ -112,8 +112,6 @@ docker run \
     -v "${CURRENT_DIR}/user_data/Downloads":/home/tilt/Downloads \
     -v "${CURRENT_DIR}/logs":/home/tilt/logs \
     -v "${CURRENT_DIR}/db_data":/data/db \
-    -v "${CURRENT_DIR}/nextjs":/home/tilt/nextjs \
-    -v "${CURRENT_DIR}/agent":/home/tilt/agent \
     -v "${CURRENT_DIR}/image":/home/tilt/image \
     -p 5900:5900 \
     -p 3001:3001 \
