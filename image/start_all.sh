@@ -28,7 +28,7 @@ sleep 3
 
 # Auto-start Chrome with remote debugging for automation
 echo "Starting Chrome with remote debugging..." | tee -a "$LOGS_DIR/startup.log"
-DISPLAY=:${DISPLAY_NUM} chromium-browser --no-first-run --incognito --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir=/tmp/chrome_profile --no-sandbox --disable-dev-shm-usage 2>&1 | tee -a "$LOGS_DIR/chrome.log" &
+DISPLAY=:${DISPLAY_NUM} ${BROWSER_BINARY:-chromium-browser} --no-first-run --incognito --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir=/tmp/chrome_profile --no-sandbox --disable-dev-shm-usage --disable-features=VizDisplayCompositor --disable-dbus 2>&1 | tee -a "$LOGS_DIR/chrome.log" &
 CHROME_PID=$!
 sleep 2  # Give Chrome time to start
 
@@ -91,6 +91,7 @@ cleanup() {
     kill $MONGO_PID $API_PID $NEXTJS_PID $CHROME_PID 2>/dev/null || true
     # Clean up Chrome processes
     pkill chrome 2>/dev/null || true
+    pkill chromium-browser 2>/dev/null || true
     pkill google-chrome 2>/dev/null || true
     # Clean up MongoDB temporary database files
     pkill mongod 2>/dev/null || true

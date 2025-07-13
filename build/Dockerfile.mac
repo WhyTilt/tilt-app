@@ -80,12 +80,10 @@ RUN usermod -aG sudo mongodb && \
 # Stage 3: User applications layer
 FROM system-packages AS user-apps
 
-# Install Google Chrome (ARM64 version)
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg && \
-    echo "deb [arch=arm64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
+# Install Chromium browser (ARM64)
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    google-chrome-stable \
+    chromium-browser \
     x11-apps \
     xpdf \
     tint2 \
@@ -93,9 +91,11 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
     unzip && \
     apt-get clean
 
-# Create chromium-browser symlink to google-chrome for compatibility
-RUN ln -sf /usr/bin/google-chrome /usr/bin/chromium && \
-    ln -sf /usr/bin/google-chrome /usr/bin/chromium-browser
+# Create chromium aliases for compatibility
+RUN ln -sf /usr/bin/chromium-browser /usr/bin/chromium
+
+# Set browser binary environment variable
+ENV BROWSER_BINARY=/usr/bin/chromium-browser
 
 # Install noVNC
 RUN git clone --branch v1.5.0 https://github.com/novnc/noVNC.git /opt/noVNC && \
