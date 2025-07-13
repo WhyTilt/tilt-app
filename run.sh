@@ -12,12 +12,12 @@ INTERACTIVE_MODE=true
 
 for arg in "$@"; do
     case $arg in
-        --dev)
+        --dev|dev)
             DEV_MODE=true
             INTERACTIVE_MODE=false
             shift
             ;;
-        --prod)
+        --prod|prod)
             DEV_MODE=false
             INTERACTIVE_MODE=false
             shift
@@ -64,11 +64,6 @@ else
     echo "Starting Tilt in production mode..."
 fi
 
-# Check if the image exists
-if ! docker image inspect "$IMAGE_NAME" > /dev/null 2>&1; then
-    echo "Docker image '$IMAGE_NAME' not found. Please run './build/build.sh' first to build the image."
-    exit 1
-fi
 
 # Set up Docker environment variables
 DOCKER_ENV_VARS="-e DEV_MODE=$DEV_MODE"

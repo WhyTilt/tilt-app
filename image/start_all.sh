@@ -74,7 +74,6 @@ if [ "$DEV_MODE" = "true" ]; then
     npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
-    npm run build 2>&1 | tee -a "$LOGS_DIR/nextjs-build.txt"
     npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 fi
 NEXTJS_PID=$!
