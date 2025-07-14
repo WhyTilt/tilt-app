@@ -8,7 +8,11 @@ image/agent
 dev-vals.txt
 .venv
 .ruff_cache
-__pycache__
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .pytest_cache
 
 # Next.js build artifacts
