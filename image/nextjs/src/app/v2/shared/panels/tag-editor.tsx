@@ -112,32 +112,22 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
   };
 
   const handleDeleteTag = async (tagToDelete: string) => {
+    console.log('DELETE BUTTON CLICKED FOR:', tagToDelete);
     if (!confirm('Are you sure you want to delete this tag? This will remove it from all tests.')) {
       return;
     }
 
+    console.log('MAKING DELETE REQUEST TO:', `/api/v2/tags/${encodeURIComponent(tagToDelete)}`);
     try {
-      // Remove tag from all tests that have it
-      const testsResponse = await fetch('/api/v2/tests');
-      const tests: Test[] = await testsResponse.json();
-      
-      const testsToUpdate = tests.filter(test => test.tags && test.tags.includes(tagToDelete));
-      
-      for (const test of testsToUpdate) {
-        const updatedTags = test.tags.filter(tag => tag !== tagToDelete);
-        
-        await fetch(`/api/v2/tests/${test.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tags: updatedTags
-          })
-        });
-      }
+      const response = await fetch(`/api/v2/tags/${encodeURIComponent(tagToDelete)}`, {
+        method: 'DELETE',
+      });
+      console.log('DELETE RESPONSE:', response.status);
       
       await fetchTags();
       onSave();
     } catch (err) {
+      console.error('DELETE ERROR:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete tag');
     }
   };
@@ -248,9 +238,14 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
                     <Edit2 size={14} />
                   </button>
                   <button
-                    onClick={() => handleDeleteTag(tag)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteTag(tag);
+                    }}
                     className="p-1 text-gray-400 hover:text-red-400 transition-colors"
                     title="Delete"
+                    type="button"
                   >
                     <Trash2 size={14} />
                   </button>

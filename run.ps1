@@ -1,7 +1,16 @@
-# Run script for Tilt on Windows PowerShell (Production only)
+# Run script for Tilt on Windows PowerShell
 
 # Error handling
 $ErrorActionPreference = "Stop"
+
+# Parse command line arguments
+$DevMode = $false
+foreach ($arg in $args) {
+    if ($arg -eq "--dev") {
+        $DevMode = $true
+        break
+    }
+}
 
 # Clear logs directory
 if (Test-Path "logs") {
@@ -9,7 +18,11 @@ if (Test-Path "logs") {
 }
 New-Item -ItemType Directory -Path "logs" -Force | Out-Null
 
-Write-Host "Starting Tilt in production mode..."
+if ($DevMode) {
+    Write-Host "Starting Tilt in development mode..."
+} else {
+    Write-Host "Starting Tilt in production mode..."
+}
 
 # Load .env.local file if it exists
 if (Test-Path ".env.local") {
@@ -60,32 +73,51 @@ if (-not $imageExists) {
     }
 }
 
-Write-Host "Starting production container..."
-Write-Host "- Frontend: Pre-built and optimized"
-Write-Host "- Backend: Production configuration"
+if ($DevMode) {
+    Write-Host "Starting development container..."
+    Write-Host "- Frontend: Local source with hot reloading"
+    Write-Host "- Backend: Production configuration"
+} else {
+    Write-Host "Starting production container..."
+    Write-Host "- Frontend: Pre-built and optimized"
+    Write-Host "- Backend: Production configuration"
+}
 
-docker run `
-    -e "DEV_MODE=false" `
-    -v "$CURRENT_DIR\user_data:/home/tilt/user_data" `
-    -v "$CURRENT_DIR\user_data\.mozilla:/home/tilt/.mozilla" `
-    -v "$CURRENT_DIR\user_data\.config\gtk-3.0:/home/tilt/.config/gtk-3.0" `
-    -v "$CURRENT_DIR\user_data\.config\gtk-2.0:/home/tilt/.config/gtk-2.0" `
-    -v "$CURRENT_DIR\user_data\.config\libreoffice:/home/tilt/.config/libreoffice" `
-    -v "$CURRENT_DIR\user_data\.config\pulse:/home/tilt/.config/pulse" `
-    -v "$CURRENT_DIR\user_data\.local:/home/tilt/.local" `
-    -v "$CURRENT_DIR\user_data\.cache:/home/tilt/.cache" `
-    -v "$CURRENT_DIR\user_data\Desktop:/home/tilt/Desktop" `
-    -v "$CURRENT_DIR\user_data\Documents:/home/tilt/Documents" `
-    -v "$CURRENT_DIR\user_data\Downloads:/home/tilt/Downloads" `
-    -v "$CURRENT_DIR\logs:/home/tilt/logs" `
-    -v "$CURRENT_DIR\db_data:/data/db" `
-    -v "$CURRENT_DIR\image:/home/tilt/image" `
-    -p 5900:5900 `
-    -p 3001:3001 `
-    -p 6080:6080 `
-    -p 8000:8000 `
-    -p 27017:27017 `
-    -it "$IMAGE_NAME"
+# Build docker command with conditional volume mount
+$dockerArgs = @(
+    "run"
+    "-e", "DEV_MODE=$($DevMode.ToString().ToLower())"
+    "-v", "$CURRENT_DIR\user_data:/home/tilt/user_data"
+    "-v", "$CURRENT_DIR\user_data\.mozilla:/home/tilt/.mozilla"
+    "-v", "$CURRENT_DIR\user_data\.config\gtk-3.0:/home/tilt/.config/gtk-3.0"
+    "-v", "$CURRENT_DIR\user_data\.config\gtk-2.0:/home/tilt/.config/gtk-2.0"
+    "-v", "$CURRENT_DIR\user_data\.config\libreoffice:/home/tilt/.config/libreoffice"
+    "-v", "$CURRENT_DIR\user_data\.config\pulse:/home/tilt/.config/pulse"
+    "-v", "$CURRENT_DIR\user_data\.local:/home/tilt/.local"
+    "-v", "$CURRENT_DIR\user_data\.cache:/home/tilt/.cache"
+    "-v", "$CURRENT_DIR\user_data\Desktop:/home/tilt/Desktop"
+    "-v", "$CURRENT_DIR\user_data\Documents:/home/tilt/Documents"
+    "-v", "$CURRENT_DIR\user_data\Downloads:/home/tilt/Downloads"
+    "-v", "$CURRENT_DIR\logs:/home/tilt/logs"
+    "-v", "$CURRENT_DIR\db_data:/data/db"
+    "-v", "$CURRENT_DIR\image:/home/tilt/image"
+)
+
+# Add dev mode volume mounts - separate mount for nextjs for better file watching
+if ($DevMode) {
+    $dockerArgs += "-v", "$CURRENT_DIR\image\nextjs:/home/tilt/nextjs-dev"
+}
+
+$dockerArgs += @(
+    "-p", "5900:5900"
+    "-p", "3001:3001"
+    "-p", "6080:6080"
+    "-p", "8000:8000"
+    "-p", "27017:27017"
+    "-it", "$IMAGE_NAME"
+)
+
+docker @dockerArgs
 
 Write-Host ""
 Write-Host "➡️  Production server started!"

@@ -55,7 +55,14 @@ API_PID=$!
 
 # Start Next.js app on port 3001 (main interface) with logging
 echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
-cd /home/tilt/image/nextjs
+
+# Use dedicated dev mount if in dev mode, otherwise use regular path
+if [ "$DEV_MODE" = "true" ]; then
+    cd /home/tilt/nextjs-dev
+    echo "Using dedicated dev mount for better file watching..." | tee -a "$LOGS_DIR/startup.log"
+else
+    cd /home/tilt/image/nextjs
+fi
 
 # Ensure .next directory exists with correct permissions
 mkdir -p .next && chown -R tilt:tilt .next 2>/dev/null || true
@@ -71,7 +78,8 @@ fi
 # Check if running in development mode
 if [ "$DEV_MODE" = "true" ]; then
     echo "Running Next.js in development mode with hot reloading..." | tee -a "$LOGS_DIR/startup.log"
-    npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
+    # Force file watching with polling for Docker + Windows
+    CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true npm run dev 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &
 else
     echo "Running Next.js in production mode..." | tee -a "$LOGS_DIR/startup.log"
     npm start 2>&1 | tee -a "$LOGS_DIR/nextjs.txt" &

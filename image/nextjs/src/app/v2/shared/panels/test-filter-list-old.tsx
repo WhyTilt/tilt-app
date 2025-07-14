@@ -260,7 +260,7 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
 
   const handleDeleteTag = async (tagId: string) => {
     try {
-      await fetch(`/api/v2/test-suites/${tagId}`, { method: 'DELETE' });
+      await fetch(`/api/v2/tags/${encodeURIComponent(tagId)}`, { method: 'DELETE' });
       
       // Refresh data
       const suitesResponse = await fetch('/api/v2/test-suites');

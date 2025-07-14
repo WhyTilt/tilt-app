@@ -14,7 +14,6 @@ export function MainPanel({ children, className = '' }: MainPanelProps) {
       bg-zinc-900/80 backdrop-blur-sm
       border border-zinc-800 rounded-lg
       overflow-auto
-      pr-16
       ${className}
     `}>
       {children}

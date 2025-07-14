@@ -381,7 +381,7 @@ function HomeContent() {
       {/* File Panel - Side Panel */}
       {isTestExplorerOpen && (
         <div className="flex-shrink-0">
-          <SidePanel width="w-96">
+          <SidePanel>
             <TestFilterList 
               key={refreshTrigger}
               onTestEdit={(test) => {

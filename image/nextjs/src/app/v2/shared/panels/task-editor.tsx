@@ -26,6 +26,7 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
   const [stepsText, setStepsText] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isTagOperation, setIsTagOperation] = useState(false);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [tagSearchTerm, setTagSearchTerm] = useState('');
 
@@ -148,6 +149,7 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
   };
 
   const debouncedAutoSave = () => {
+    if (isTagOperation) return; // Don't auto-save during tag operations
     if (saveTimeout) {
       clearTimeout(saveTimeout);
     }
@@ -281,7 +283,7 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 overflow-auto p-8">
           <div className="space-y-6">
             {/* Test Name */}
             <div>
@@ -309,16 +311,12 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                   {editingTest.tags && editingTest.tags.length > 0 && editingTest.tags.map(tag => (
                     <button
                       key={tag}
-                      onClick={() => {
-                        console.log('Removing tag:', tag);
-                        const updatedTest = { 
-                          ...editingTest, 
-                          tags: editingTest.tags.filter(t => t !== tag) 
-                        };
-                        setEditingTest(updatedTest);
-                        console.log('Calling immediate auto-save after tag removal');
-                        // Call auto-save with updated data immediately
-                        handleAutoSaveWithData(updatedTest);
+                      onClick={async () => {
+                        setIsTagOperation(true);
+                        await fetch(`/api/v2/tags/${encodeURIComponent(tag)}`, {
+                          method: 'DELETE',
+                        });
+                        setIsTagOperation(false);
                       }}
                       className="flex items-center gap-1 px-2 py-1 bg-[var(--accent-color-light)] border border-[var(--accent-color)] text-[var(--accent-color)] rounded-md text-xs hover:bg-[var(--accent-color)] hover:text-white transition-colors"
                     >
@@ -366,8 +364,7 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                             };
                             setEditingTest(updatedTest);
                             setTagSearchTerm('');
-                            console.log('Adding tag, calling immediate auto-save');
-                            handleAutoSaveWithData(updatedTest);
+                            debouncedAutoSave();
                           }}
                           className="w-full text-left px-3 py-2 bg-zinc-800/50 border border-zinc-700 text-gray-300 hover:bg-zinc-700/50 rounded-lg transition-colors"
                         >
@@ -389,8 +386,7 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                           setEditingTest(updatedTest);
                           setAllTags(prev => [...prev, newTag]);
                           setTagSearchTerm('');
-                          console.log('Creating and adding new tag, calling immediate auto-save');
-                          handleAutoSaveWithData(updatedTest);
+                          debouncedAutoSave();
                         }}
                         className="w-full text-left px-3 py-2 bg-zinc-700/50 border border-zinc-600 text-[var(--accent-color)] hover:bg-zinc-600/50 rounded-lg transition-colors"
                       >
