@@ -76,6 +76,7 @@ function HomeContent() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isTestExplorerOpen, setIsTestExplorerOpen] = useState(true);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
+  const [selectedTests, setSelectedTests] = useState<any[]>([]);
   const { accentColor, setAccentColor } = useTheme();
   
   // Test runner state from context
@@ -395,6 +396,7 @@ function HomeContent() {
                 setEditingTest(test);
                 setIsTaskEditorOpen(true);
               }}
+              onSelectedTestsChange={setSelectedTests}
               />
           </SidePanel>
         </div>
@@ -442,6 +444,7 @@ function HomeContent() {
                       // Trigger FilePanel refresh by updating key
                       setRefreshTrigger(prev => prev + 1);
                     }}
+                    selectedTests={selectedTests}
                   />
                 </div>
               )}

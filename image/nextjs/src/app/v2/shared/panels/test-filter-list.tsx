@@ -19,19 +19,18 @@ interface TestFilterListProps {
   onTestEdit?: (test: Test) => void;
   onTagEditorOpen?: () => void;
   onTestCreate?: (test: Test) => void;
+  onSelectedTestsChange?: (tests: Test[]) => void;
 }
 
-export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTagEditorOpen, onTestCreate }: TestFilterListProps) {
+export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTagEditorOpen, onTestCreate, onSelectedTestsChange }: TestFilterListProps) {
   const { startExecution, stopExecution, runState } = useTestRunner();
   const [tests, setTests] = useState<Test[]>([]);
   const [filteredTests, setFilteredTests] = useState<Test[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const [isTagFilterExpanded, setIsTagFilterExpanded] = useState(true);
 
   // Fetch tests and extract tags
   useEffect(() => {
@@ -49,9 +48,24 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
         setTests(testsData);
         setFilteredTests(testsData);
         
-        // Extract all unique tags from tests
-        const uniqueTags = [...new Set(testsData.flatMap((test: Test) => test.tags || []))];
-        setAllTags(uniqueTags);
+        // Update selected tests with fresh data to reflect tag changes
+        setSelectedTests(prev => 
+          prev.map(selectedTest => {
+            const updatedTest = testsData.find(t => t.id === selectedTest.id);
+            return updatedTest || selectedTest;
+          }).filter(test => testsData.some(t => t.id === test.id)) // Remove any tests that no longer exist
+        );
+        
+        // Fetch all tags from the tags API
+        const tagsResponse = await fetch('/api/v2/tags');
+        if (tagsResponse.ok) {
+          const tagsData = await tagsResponse.json();
+          setAllTags(tagsData);
+        } else {
+          // Fallback to extracting tags from tests if API fails
+          const uniqueTags = [...new Set(testsData.flatMap((test: Test) => test.tags || []))];
+          setAllTags(uniqueTags);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
@@ -75,39 +89,16 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
       );
     }
 
-    // Filter by selected tags
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(test =>
-        selectedTags.some(tag => test.tags && test.tags.includes(tag))
-      );
-    }
-
     setFilteredTests(filtered);
-  }, [tests, searchTerm, selectedTags]);
+  }, [tests, searchTerm]);
 
-  const toggleTag = (tag: string) => {
-    const isCurrentlySelected = selectedTags.includes(tag);
-    
-    if (isCurrentlySelected) {
-      setSelectedTags(prev => prev.filter(t => t !== tag));
-      // Remove tests with this tag from selected tests
-      setSelectedTests(prev => 
-        prev.filter(test => !test.tags || !test.tags.includes(tag))
-      );
-    } else {
-      setSelectedTags(prev => [...prev, tag]);
-      // Add tests with this tag to selected tests (only if they have steps)
-      const testsWithTag = tests.filter(test => 
-        test.tags && test.tags.includes(tag) && hasValidSteps(test)
-      );
-      setSelectedTests(prev => {
-        const newTests = testsWithTag.filter(test => 
-          !prev.some(selectedTest => selectedTest.id === test.id)
-        );
-        return [...prev, ...newTests];
-      });
+  // Notify parent component when selected tests change
+  useEffect(() => {
+    if (onSelectedTestsChange) {
+      onSelectedTestsChange(selectedTests);
     }
-  };
+  }, [selectedTests, onSelectedTestsChange]);
+
 
   const toggleTestSelection = (test: Test) => {
     // Don't allow selection of tests without steps
@@ -125,6 +116,7 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
   const hasValidSteps = (test: Test) => {
     return test.steps && test.steps.length > 0 && test.steps.some(step => step.trim() !== '');
   };
+
 
   const handleRunTests = () => {
     if (selectedTests.length > 0) {
@@ -220,13 +212,6 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           >
             <FileText size={16} />
           </button>
-          <button
-            onClick={() => onTagEditorOpen && onTagEditorOpen()}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-            title="Manage Tags"
-          >
-            <Tag size={16} />
-          </button>
         </div>
       </div>
 
@@ -244,90 +229,45 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           />
         </div>
 
-        {/* Tags Filter */}
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap flex-1">
-                <Filter size={14} className="text-gray-400" />
-                {isTagFilterExpanded ? (
-                  allTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={`
-                        flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
-                        ${selectedTags.includes(tag)
-                          ? 'bg-[var(--accent-color)] text-white'
-                          : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                        }
-                      `}
-                    >
-                      <Tag size={12} />
-                      {tag}
-                    </button>
-                  ))
-                ) : (
-                  allTags.slice(0, 3).map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={`
-                        flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
-                        ${selectedTags.includes(tag)
-                          ? 'bg-[var(--accent-color)] text-white'
-                          : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                        }
-                      `}
-                    >
-                      <Tag size={12} />
-                      {tag}
-                    </button>
-                  ))
-                )}
-              </div>
-              
-              {/* Check All Checkbox - positioned at right of tag filter row */}
-              <div
-                onClick={() => {
-                  const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
-                  if (allChecked) {
-                    setSelectedTests([]);
-                  } else {
-                    setSelectedTests(filteredTests);
-                  }
-                }}
-                className={`
-                  w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
-                  ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
-                    ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
-                    : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
-                  }
-                `}
-                title="Select All Tests"
-              >
-                {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            
-            {allTags.length > 3 && (
-              <div className="flex justify-center mt-2">
-                <button
-                  onClick={() => setIsTagFilterExpanded(!isTagFilterExpanded)}
-                  className="p-1 text-gray-400 hover:text-white transition-colors"
-                >
-                  <ChevronDown 
-                    size={16} 
-                    className={`transform transition-transform ${isTagFilterExpanded ? 'rotate-180' : ''}`}
-                  />
-                </button>
-              </div>
+        {/* Test Controls Row */}
+        <div className="flex items-center justify-end gap-2">
+          {/* Tag Management Button */}
+          <button
+            onClick={() => onTagEditorOpen && onTagEditorOpen()}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+            title="Manage Tags"
+          >
+            <Tag size={16} />
+          </button>
+
+          {/* Check All Checkbox */}
+          <div
+            onClick={() => {
+              const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
+              if (allChecked) {
+                setSelectedTests([]);
+              } else {
+                setSelectedTests(filteredTests);
+              }
+            }}
+            className={`
+              w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
+              ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
+                ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
+                : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
+              }
+            `}
+            title="Select All Tests"
+          >
+            {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
             )}
           </div>
+        </div>
       </div>
+
 
       {/* Test List */}
       <div className="flex-1 overflow-y-auto p-4">

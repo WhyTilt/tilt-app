@@ -46,6 +46,35 @@
   body {
     overflow: hidden;
   }
+  
+  /* Global dark mode scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #52525b #18181b;
+  }
+  
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  *::-webkit-scrollbar-track {
+    background: #18181b;
+    border-radius: 3px;
+  }
+  
+  *::-webkit-scrollbar-thumb {
+    background: #52525b;
+    border-radius: 3px;
+  }
+  
+  *::-webkit-scrollbar-thumb:hover {
+    background: #71717a;
+  }
+  
+  *::-webkit-scrollbar-corner {
+    background: #18181b;
+  }
 }
 
 @layer utilities {

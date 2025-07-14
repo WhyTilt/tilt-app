@@ -17,9 +17,10 @@ interface TagEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
+  selectedTests?: Test[];
 }
 
-export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps) {
+export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: TagEditorPanelProps) {
   const [allTags, setAllTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +40,17 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
     setError(null);
     
     try {
-      const response = await fetch('/api/v2/tests');
-      if (!response.ok) throw new Error('Failed to fetch tests');
+      console.log('Fetching tags from /api/v2/tags...');
+      const response = await fetch('/api/v2/tags');
+      console.log('Fetch tags response status:', response.status);
       
-      const tests: Test[] = await response.json();
-      const uniqueTags = [...new Set(tests.flatMap(test => test.tags || []))];
-      setAllTags(uniqueTags);
+      if (!response.ok) throw new Error('Failed to fetch tags');
+      
+      const tags: string[] = await response.json();
+      console.log('Fetched tags:', tags);
+      setAllTags(tags);
     } catch (err) {
+      console.error('Error fetching tags:', err);
       setError(err instanceof Error ? err.message : 'Failed to load tags');
     } finally {
       setIsLoading(false);
@@ -75,22 +80,39 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
 
     try {
       if (editingTag) {
+        // First delete the old tag from the tags collection
+        await fetch(`/api/v2/tags/${encodeURIComponent(editingTag)}`, {
+          method: 'DELETE',
+        });
+        
+        // Create the new tag in the tags collection
+        await fetch(`/api/v2/tags/${encodeURIComponent(tagName.trim())}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
         // Rename existing tag across all tests
         const testsResponse = await fetch('/api/v2/tests');
         const tests: Test[] = await testsResponse.json();
         
         const testsToUpdate = tests.filter(test => test.tags && test.tags.includes(editingTag));
+        console.log(`Renaming tag "${editingTag}" to "${tagName}" across ${testsToUpdate.length} tests`);
         
         for (const test of testsToUpdate) {
-          const updatedTags = test.tags.map(tag => tag === editingTag ? tagName : tag);
+          const updatedTags = test.tags.map(tag => tag === editingTag ? tagName.trim() : tag);
           
-          await fetch(`/api/v2/tests/${test.id}`, {
+          const response = await fetch(`/api/v2/tests/${test.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               tags: updatedTags
             })
           });
+          
+          if (!response.ok) {
+            console.error(`Failed to update test ${test.id}:`, await response.text());
+            throw new Error(`Failed to rename tag for test: ${test.name}`);
+          }
         }
       } else {
         // Creating a new tag - check if it already exists
@@ -99,8 +121,25 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
           return;
         }
         
-        // Add new tag to local state - it will become available system-wide when assigned to a test
-        setAllTags(prev => [...prev, tagName.trim()]);
+        // Create new tag via API
+        console.log('Creating tag:', tagName.trim());
+        const createResponse = await fetch(`/api/v2/tags/${encodeURIComponent(tagName.trim())}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        console.log('Create response status:', createResponse.status);
+        const createResult = await createResponse.json();
+        console.log('Create response body:', createResult);
+        
+        if (!createResponse.ok) {
+          const errorMessage = createResult.error || 'Failed to create tag';
+          console.error('Tag creation failed:', errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        // Immediately add to local state so it shows up right away
+        setAllTags(prev => [...prev, tagName.trim()].sort());
       }
 
       await fetchTags();
@@ -108,6 +147,54 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
       onSave();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save tag');
+    }
+  };
+
+  const handleBulkTagToggle = async (tag: string) => {
+    if (selectedTests.length === 0) return;
+
+    try {
+      // Check how many selected tests have this tag
+      const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag));
+      const shouldAddTag = testsWithTag.length < selectedTests.length;
+      const action = shouldAddTag ? 'add' : 'remove';
+      
+      console.log(`Bulk ${action} tag "${tag}" for ${selectedTests.length} tests`);
+
+      // Single API call for bulk operation
+      const response = await fetch('/api/v2/tests/bulk-tag', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testIds: selectedTests.map(test => test.id),
+          tag: tag,
+          action: action
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Bulk tag operation failed:', errorData);
+        throw new Error(`Failed to ${action} tag: ${errorData.error || response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Bulk tag operation result:', result);
+
+      // Update the selected tests with the returned data
+      if (result.updatedTests && result.updatedTests.length > 0) {
+        // Update selectedTests state to reflect changes
+        const updatedTestsMap = new Map(result.updatedTests.map(test => [test.id, test]));
+        
+        // Notify parent component about the updates
+        if (onSave) {
+          onSave();
+        }
+      }
+
+      await fetchTags();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update tags');
     }
   };
 
@@ -179,6 +266,15 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
                 type="text"
                 value={tagName}
                 onChange={(e) => setTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveTag();
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEditing();
+                  }
+                }}
                 className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-[var(--accent-color)] transition-colors"
                 placeholder="Enter tag name"
                 autoFocus
@@ -187,16 +283,24 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
 
             <div className="flex gap-2">
               <button
-                onClick={handleSaveTag}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSaveTag();
+                }}
                 disabled={!tagName.trim()}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[var(--accent-color)] text-white rounded-lg hover:bg-[var(--accent-color-hover)] transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed"
+                type="button"
               >
                 <Save size={16} />
                 {editingTag ? 'Update' : 'Create'}
               </button>
               <button
-                onClick={cancelEditing}
+                onClick={(e) => {
+                  e.preventDefault();
+                  cancelEditing();
+                }}
                 className="px-4 py-2 bg-zinc-700 text-gray-300 rounded-lg hover:bg-zinc-600 transition-colors"
+                type="button"
               >
                 Cancel
               </button>
@@ -205,9 +309,21 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
         )}
       </div>
 
+      {/* Selected Tests Info */}
+      {selectedTests.length > 0 && (
+        <div className="p-4 border-b border-zinc-700 bg-zinc-800/30">
+          <h3 className="text-sm font-medium text-gray-300 mb-2">Bulk Tag Operations</h3>
+          <p className="text-xs text-gray-400">
+            {selectedTests.length} test{selectedTests.length !== 1 ? 's' : ''} selected. Click tags below to toggle them for all selected tests.
+          </p>
+        </div>
+      )}
+
       {/* Tags List */}
       <div className="flex-1 p-4">
-        <h3 className="text-sm font-medium text-gray-300 mb-4">Existing Tags</h3>
+        <h3 className="text-sm font-medium text-gray-300 mb-4">
+          {selectedTests.length > 0 ? 'Click tags to toggle for selected tests' : 'Existing Tags'}
+        </h3>
         
         {isLoading ? (
           <div className="text-gray-400 text-sm text-center py-8">
@@ -219,39 +335,72 @@ export function TagEditorPanel({ isOpen, onClose, onSave }: TagEditorPanelProps)
           </div>
         ) : (
           <div className="space-y-3">
-            {allTags.map(tag => (
-              <div
-                key={tag}
-                className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg hover:bg-zinc-700/50 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm font-medium">
-                    {tag}
+            {allTags.map(tag => {
+              // Calculate tag state for selected tests
+              const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag));
+              const hasTag = testsWithTag.length > 0;
+              const partialTag = testsWithTag.length > 0 && testsWithTag.length < selectedTests.length;
+              const isClickable = selectedTests.length > 0;
+              
+              return (
+                <div
+                  key={tag}
+                  onClick={isClickable ? () => handleBulkTagToggle(tag) : undefined}
+                  className={`
+                    flex items-center justify-between p-3 border rounded-lg transition-colors
+                    ${isClickable ? 'cursor-pointer' : ''}
+                    ${hasTag && isClickable
+                      ? partialTag
+                        ? 'bg-[var(--accent-color)]/30 border-[var(--accent-color)]/50 hover:bg-[var(--accent-color)]/40'
+                        : 'bg-[var(--accent-color)]/50 border-[var(--accent-color)] hover:bg-[var(--accent-color)]/60'
+                      : 'bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-700/50'
+                    }
+                  `}
+                  title={
+                    isClickable
+                      ? partialTag 
+                        ? `${testsWithTag.length}/${selectedTests.length} tests have this tag - click to toggle`
+                        : hasTag 
+                          ? 'All selected tests have this tag - click to remove'
+                          : 'None of the selected tests have this tag - click to add'
+                      : undefined
+                  }
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-medium ${hasTag && isClickable ? 'text-white' : 'text-white'}`}>
+                      {tag}
+                      {partialTag && isClickable && (
+                        <span className="ml-2 text-xs opacity-70">({testsWithTag.length}/{selectedTests.length})</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 ml-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditing(tag);
+                      }}
+                      className="p-1 text-gray-400 hover:text-white transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteTag(tag);
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                      title="Delete"
+                      type="button"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 ml-3">
-                  <button
-                    onClick={() => startEditing(tag)}
-                    className="p-1 text-gray-400 hover:text-white transition-colors"
-                    title="Edit"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDeleteTag(tag);
-                    }}
-                    className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                    title="Delete"
-                    type="button"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
