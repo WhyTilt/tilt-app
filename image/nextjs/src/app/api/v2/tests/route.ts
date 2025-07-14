@@ -19,16 +19,20 @@ export async function GET() {
   try {
     const client = await getClient();
     const db = client.db(DATABASE_NAME);
-    const collection = db.collection('tests');
+    const collection = db.collection('tasks');
     
-    const tests = await collection.find({}).toArray();
+    const tasks = await collection.find({}).toArray();
     
-    // Convert ObjectId to string for JSON serialization
-    const serializedTests = tests.map(test => ({
-      ...test,
-      id: test._id.toString(),
-      _id: undefined,
-      lastRun: test.lastRun || null
+    // Convert tasks to test format for the frontend
+    const serializedTests = tasks.map(task => ({
+      id: task._id.toString(),
+      name: task.label || task.instructions?.substring(0, 100) + '...' || 'Untitled Task',
+      tags: task.metadata?.source ? [task.metadata.source] : [],
+      steps: task.metadata?.original_steps || (task.instructions ? task.instructions.split('\n').filter(line => line.trim()) : []),
+      created_at: task.created_at || null,
+      updated_at: task.created_at || null,
+      status: task.status || 'pending',
+      lastRun: task.completed_at || null
     }));
     
     return NextResponse.json(serializedTests);

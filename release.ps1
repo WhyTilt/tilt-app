@@ -30,7 +30,7 @@ function Show-Usage {
 
 # Parse command line arguments
 if ([string]::IsNullOrEmpty($Version)) {
-    # Get latest version from git tag and auto-increment
+    # Use latest existing tag - DON'T auto-increment
     $LATEST_TAG = git describe --tags --abbrev=0 2>$null
     if ([string]::IsNullOrEmpty($LATEST_TAG)) {
         Write-Host "❌ No git tags found and no version specified"
@@ -39,25 +39,8 @@ if ([string]::IsNullOrEmpty($Version)) {
         exit 1
     }
     
-    # Auto-increment patch version for v0.0.x format
-    if ($LATEST_TAG -match '^v(\d+)\.(\d+)\.(\d+)$') {
-        $MAJOR = [int]$Matches[1]
-        $MINOR = [int]$Matches[2]
-        $PATCH = [int]$Matches[3]
-        $NEW_PATCH = $PATCH + 1
-        $Version = "v$MAJOR.$MINOR.$NEW_PATCH"
-        Write-Host "Latest git tag: $LATEST_TAG"
-        Write-Host "Auto-incrementing to: $Version"
-        
-        # Create and push the new tag
-        git tag -a "$Version" -m "Release $Version`: Auto-incremented patch version"
-        git push origin "$Version"
-        Write-Host "✅ Created and pushed new tag: $Version"
-    } else {
-        Write-Host "❌ Latest tag '$LATEST_TAG' doesn't follow semantic versioning"
-        Write-Host "Please use format vX.Y.Z"
-        exit 1
-    }
+    $Version = $LATEST_TAG
+    Write-Host "Using existing tag: $Version"
 } elseif ($Version -eq "-h" -or $Version -eq "--help" -or $Version -eq "help") {
     Show-Usage
     exit 0
@@ -78,6 +61,17 @@ Write-Host "Version: $Version"
 Write-Host "Platform: Windows"
 Write-Host ""
 
+# Load .env.local file if it exists
+if (Test-Path ".env.local") {
+    Write-Host "Loading environment variables from .env.local..."
+    Get-Content ".env.local" | Where-Object { $_ -notmatch '^#' -and $_ -match '=' } | ForEach-Object {
+        $parts = $_ -split '=', 2
+        if ($parts.Length -eq 2) {
+            [Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim())
+        }
+    }
+}
+
 $REPO_NAME = "whytilt/tilt-app-windows"
 $LOCAL_IMAGE = "tilt-app-windows:latest"
 
@@ -93,14 +87,36 @@ try {
     exit 1
 }
 
-# Check DockerHub authentication
-$dockerInfo = docker system info 2>$null | Out-String
+# Check DockerHub authentication - try auto-login first
+Write-Host "Checking Docker authentication..."
+try {
+    $dockerInfo = docker system info 2>$null | Out-String
+} catch {
+    $dockerInfo = ""
+}
+Write-Host "Docker info check completed"
+
 if (-not $dockerInfo.Contains("Username:")) {
-    Write-Host "❌ Not logged in to DockerHub"
-    Write-Host "Please run: docker login"
-    Write-Host "Or if you have a token saved in .env.local:"
-    Write-Host "  Load environment variables and use: docker login -u `$DOCKER_USERNAME --password-stdin"
-    exit 1
+    Write-Host "Not logged in to DockerHub, attempting auto-login..."
+    if ($env:DOCKER_USERNAME -and $env:DOCKER_TOKEN) {
+        Write-Host "Using credentials from .env.local..."
+        Write-Host "Username: $env:DOCKER_USERNAME"
+        $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USERNAME --password-stdin
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Auto-login failed"
+            exit 1
+        }
+        Write-Host "✅ Auto-login successful"
+    } else {
+        Write-Host "❌ Not logged in to DockerHub and no credentials in .env.local"
+        Write-Host "DOCKER_USERNAME: $env:DOCKER_USERNAME"
+        Write-Host "DOCKER_TOKEN exists: $([bool]$env:DOCKER_TOKEN)"
+        Write-Host "Please run: docker login"
+        Write-Host "Or add DOCKER_USERNAME and DOCKER_TOKEN to .env.local"
+        exit 1
+    }
+} else {
+    Write-Host "Already logged in to DockerHub"
 }
 
 Write-Host "✅ Docker authentication verified"

@@ -50,7 +50,7 @@ Tilt is built as a multi-container system with clear separation of concerns:
 - **MongoDB Database**: Task storage, execution tracking, and result reporting
 - **Tool System**: Extensible automation tools with versioning support
 
-## Quick Start
+## Installation
 
 ### Prerequisites
 
@@ -58,18 +58,48 @@ Tilt is built as a multi-container system with clear separation of concerns:
 - At least 4GB RAM available
 - Anthropic API key ([Get one here](https://console.anthropic.com/))
 
-### Fast Start
+### Linux Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/WhyTilt/tilt-app.git app
-cd app
+git clone https://github.com/WhyTilt/tilt-app.git
+cd tilt-app
 
-# Build and run with persistent data
+# Run (automatically pulls from Docker Hub)
 ./run.sh
 ```
 
-Open your browser to [http://localhost:3001](http://localhost:3001) and start automating!
+### Windows Installation
+
+```powershell
+# Clone the repository
+git clone https://github.com/WhyTilt/tilt-app.git
+cd tilt-app
+
+# Run (automatically pulls from Docker Hub)
+.\run.ps1
+```
+
+### macOS Installation
+*(Coming Soon)*
+
+### Quick Architecture Detection
+
+Not sure which image to use? Run this to detect your architecture:
+
+**Linux/macOS:**
+```bash
+uname -m  # x86_64 = linux image, aarch64/arm64 = arm64 image
+```
+
+**Windows:**
+```powershell
+$env:PROCESSOR_ARCHITECTURE  # AMD64 = windows image
+```
+
+### Getting Started
+
+Once installed, open your browser to [http://localhost:3001](http://localhost:3001) and start automating!
 
 
 ## Features
