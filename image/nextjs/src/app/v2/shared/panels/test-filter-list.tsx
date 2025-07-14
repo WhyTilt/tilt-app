@@ -208,7 +208,10 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
     <div className={`h-full flex flex-col ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-700/50">
-        <h3 className="text-white font-medium text-sm">Test Explorer</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-white font-medium text-sm">Test Explorer</h3>
+        </div>
+        
         <div className="flex items-center gap-2">
           <button
             onClick={handleCreateTest}
@@ -224,32 +227,6 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           >
             <Tag size={16} />
           </button>
-          
-          {/* Check All Checkbox */}
-          <div
-            onClick={() => {
-              const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
-              if (allChecked) {
-                setSelectedTests([]);
-              } else {
-                setSelectedTests(filteredTests);
-              }
-            }}
-            className={`
-              w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
-              ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
-                ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
-                : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
-              }
-            `}
-            title="Select All Tests"
-          >
-            {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
-              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            )}
-          </div>
         </div>
       </div>
 
@@ -269,43 +246,71 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
 
         {/* Tags Filter */}
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Filter size={14} className="text-gray-400" />
-              {isTagFilterExpanded ? (
-                allTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`
-                      flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
-                      ${selectedTags.includes(tag)
-                        ? 'bg-[var(--accent-color)] text-white'
-                        : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                      }
-                    `}
-                  >
-                    <Tag size={12} />
-                    {tag}
-                  </button>
-                ))
-              ) : (
-                allTags.slice(0, 3).map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`
-                      flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
-                      ${selectedTags.includes(tag)
-                        ? 'bg-[var(--accent-color)] text-white'
-                        : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                      }
-                    `}
-                  >
-                    <Tag size={12} />
-                    {tag}
-                  </button>
-                ))
-              )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap flex-1">
+                <Filter size={14} className="text-gray-400" />
+                {isTagFilterExpanded ? (
+                  allTags.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`
+                        flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
+                        ${selectedTags.includes(tag)
+                          ? 'bg-[var(--accent-color)] text-white'
+                          : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                        }
+                      `}
+                    >
+                      <Tag size={12} />
+                      {tag}
+                    </button>
+                  ))
+                ) : (
+                  allTags.slice(0, 3).map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`
+                        flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors
+                        ${selectedTags.includes(tag)
+                          ? 'bg-[var(--accent-color)] text-white'
+                          : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                        }
+                      `}
+                    >
+                      <Tag size={12} />
+                      {tag}
+                    </button>
+                  ))
+                )}
+              </div>
+              
+              {/* Check All Checkbox - positioned at right of tag filter row */}
+              <div
+                onClick={() => {
+                  const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
+                  if (allChecked) {
+                    setSelectedTests([]);
+                  } else {
+                    setSelectedTests(filteredTests);
+                  }
+                }}
+                className={`
+                  w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
+                  ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
+                    ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
+                    : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
+                  }
+                `}
+                title="Select All Tests"
+              >
+                {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
             </div>
             
             {allTags.length > 3 && (
