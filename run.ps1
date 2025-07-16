@@ -4,13 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 # Parse command line arguments
-$DevMode = $false
-foreach ($arg in $args) {
-    if ($arg -eq "--dev") {
-        $DevMode = $true
-        break
-    }
-}
+$DevMode = $args[0] -eq "dev"
 
 # Clear logs directory
 if (Test-Path "logs") {
@@ -35,7 +29,11 @@ if (Test-Path ".env.local") {
     }
 }
 
-$IMAGE_NAME = "tilt-app-windows:latest"
+if ($DevMode) {
+    $IMAGE_NAME = "tilt-dev-windows:latest"
+} else {
+    $IMAGE_NAME = "tilt-app-windows:latest"
+}
 
 # Create db_data directory if it doesn't exist
 if (!(Test-Path "db_data")) {
@@ -65,8 +63,13 @@ $CURRENT_DIR = (Get-Location).Path
 # Check if image exists
 $imageExists = docker images -q "$IMAGE_NAME" 2>$null
 if (-not $imageExists) {
-    Write-Host "Production image not found. Building..."
-    & ".\build.ps1"
+    if ($DevMode) {
+        Write-Host "Development image not found. Building..."
+        & ".\build.ps1" "dev"
+    } else {
+        Write-Host "Production image not found. Building..."
+        & ".\build.ps1"
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Build failed!"
         exit $LASTEXITCODE
@@ -120,7 +123,11 @@ $dockerArgs += @(
 docker @dockerArgs
 
 Write-Host ""
-Write-Host "➡️  Production server started!"
+if ($DevMode) {
+    Write-Host "➡️  Development server started!"
+} else {
+    Write-Host "➡️  Production server started!"
+}
 Write-Host "➡️  Frontend: http://localhost:3001"
 Write-Host "➡️  Backend API: http://localhost:8000"
 Write-Host "➡️  VNC Web: http://localhost:6080"

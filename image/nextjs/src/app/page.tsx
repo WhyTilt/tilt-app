@@ -88,7 +88,8 @@ function HomeContent() {
     setExecutionPanelOpen,
     pauseExecution,
     resumeExecution,
-    stopExecution
+    stopExecution,
+    sendMessageToAgent
   } = useTestRunner();
   
   // Panel preferences from context
@@ -468,10 +469,12 @@ function HomeContent() {
             onStop={() => {
               stopExecution();
             }}
+            onSendMessage={sendMessageToAgent}
             screenshot={executionData.screenshot}
             screenshots={executionData.screenshots}
             thoughts={executionData.thoughts}
             actions={executionData.actions}
+            chatMessages={executionData.chatMessages}
           />
         )}
       </div>

@@ -10,9 +10,18 @@ export async function GET() {
     await client.connect();
     const db = client.db(DB_NAME);
     
-    // Get all tags from the dedicated tags collection
+    // Get all tags from the dedicated tags collection with color info
     const tagsFromCollection = await db.collection('tags').find({}).toArray();
-    const collectionTags = tagsFromCollection.map(tag => tag.name);
+    const tagMap = new Map();
+    
+    // Store tags with their colors
+    tagsFromCollection.forEach(tag => {
+      tagMap.set(tag.name, {
+        name: tag.name,
+        color: tag.color || '#3b82f6',
+        description: tag.description || ''
+      });
+    });
     
     // Get all tags from existing tests
     const tests = await db.collection('tasks').find({}).toArray();
@@ -25,8 +34,18 @@ export async function GET() {
     const testsCollectionTags = testsFromTestsCollection
       .flatMap(test => test.tags || []);
     
-    // Combine and deduplicate all tags
-    const allTags = [...new Set([...collectionTags, ...testTags, ...testsCollectionTags])];
+    // Add any missing tags with default color
+    [...testTags, ...testsCollectionTags].forEach(tagName => {
+      if (!tagMap.has(tagName)) {
+        tagMap.set(tagName, {
+          name: tagName,
+          color: '#3b82f6',
+          description: ''
+        });
+      }
+    });
+    
+    const allTags = Array.from(tagMap.values());
     
     await client.close();
     

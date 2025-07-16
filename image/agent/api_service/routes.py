@@ -861,3 +861,100 @@ async def set_api_key(request_data: dict):
         
     except Exception as e:
         return {"error": f"Failed to set API key: {str(e)}"}
+
+@router.post("/agent/interrupt")
+async def send_message_to_agent(request_data: dict):
+    """Send a chat message with additional instructions to the running agent"""
+    try:
+        from datetime import datetime, timezone
+        
+        test_id = request_data.get("testId")
+        message = request_data.get("message")
+        timestamp = request_data.get("timestamp")
+        
+        if not test_id or not message:
+            return {"error": "Missing required fields: testId and message"}
+        
+        # Log the chat message
+        print(f"[Agent Chat] Test {test_id}: {message}")
+        
+        # Store the chat message in a queue or database for the agent to process
+        # Store it in MongoDB in an 'interrupts' collection (keeping same name as frontend expects)
+        try:
+            from pymongo import MongoClient
+            
+            client = MongoClient("mongodb://localhost:27017/")
+            db = client.tilt
+            interrupts_collection = db.interrupts
+            
+            interrupt_doc = {
+                "test_id": test_id,
+                "message": message,
+                "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(timezone.utc),
+                "processed": False
+            }
+            
+            result = interrupts_collection.insert_one(interrupt_doc)
+            
+            return {
+                "success": True,
+                "message": "Interrupt message queued for agent",
+                "interrupt_id": str(result.inserted_id)
+            }
+            
+        except Exception as db_error:
+            print(f"Failed to store interrupt in database: {db_error}")
+            # Even if DB storage fails, we can still log the interrupt
+            return {
+                "success": True,
+                "message": "Interrupt message logged (database unavailable)",
+                "warning": "Message not persisted"
+            }
+        
+    except Exception as e:
+        print(f"Error processing agent interrupt: {e}")
+        return {"error": f"Failed to process interrupt: {str(e)}"}
+
+@router.get("/agent/interrupts/{test_id}")
+async def get_agent_chat_messages(test_id: str):
+    """Get pending chat messages for a test"""
+    try:
+        from pymongo import MongoClient
+        
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client.tilt
+        interrupts_collection = db.interrupts
+        
+        # Get unprocessed chat messages for this test
+        messages = list(interrupts_collection.find({
+            "test_id": test_id,
+            "processed": False
+        }).sort("created_at", 1))
+        
+        # Mark messages as processed
+        if messages:
+            message_ids = [message["_id"] for message in messages]
+            interrupts_collection.update_many(
+                {"_id": {"$in": message_ids}},
+                {"$set": {"processed": True}}
+            )
+        
+        # Format response
+        formatted_messages = []
+        for message in messages:
+            formatted_messages.append({
+                "id": str(message["_id"]),
+                "message": message["message"],
+                "timestamp": message["timestamp"],
+                "created_at": message["created_at"]
+            })
+        
+        return {
+            "messages": formatted_messages,
+            "count": len(formatted_messages)
+        }
+        
+    except Exception as e:
+        print(f"Error fetching agent chat messages: {e}")
+        return {"error": f"Failed to fetch messages: {str(e)}"}

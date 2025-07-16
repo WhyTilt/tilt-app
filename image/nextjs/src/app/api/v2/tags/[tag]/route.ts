@@ -10,7 +10,9 @@ export async function POST(
 ) {
   try {
     const tag = decodeURIComponent(params.tag);
-    console.log('CREATE TAG API CALLED FOR:', tag);
+    const body = await request.json().catch(() => ({}));
+    const { color = '#3b82f6' } = body;
+    console.log('CREATE TAG API CALLED FOR:', tag, 'with color:', color);
     
     // Validate tag name
     if (!tag || tag.trim().length === 0) {
@@ -42,7 +44,8 @@ export async function POST(
         $setOnInsert: { 
           name: tag, 
           created_at: new Date(),
-          description: ''
+          description: '',
+          color: color
         } 
       },
       { upsert: true }

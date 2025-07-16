@@ -19,20 +19,20 @@ export async function GET() {
   try {
     const client = await getClient();
     const db = client.db(DATABASE_NAME);
-    const collection = db.collection('tasks');
+    const collection = db.collection('tests');
     
-    const tasks = await collection.find({}).toArray();
+    const tests = await collection.find({}).toArray();
     
-    // Convert tasks to test format for the frontend
-    const serializedTests = tasks.map(task => ({
-      id: task._id.toString(),
-      name: task.label || task.instructions?.substring(0, 100) + '...' || 'Untitled Task',
-      tags: task.metadata?.source ? [task.metadata.source] : [],
-      steps: task.metadata?.original_steps || (task.instructions ? task.instructions.split('\n').filter(line => line.trim()) : []),
-      created_at: task.created_at || null,
-      updated_at: task.created_at || null,
-      status: task.status || 'pending',
-      lastRun: task.completed_at || null
+    // Convert tests to test format for the frontend
+    const serializedTests = tests.map(test => ({
+      id: test._id.toString(),
+      name: test.name || test.label || test.instructions?.substring(0, 100) + '...' || 'Untitled Test',
+      tags: test.tags || (test.metadata?.source ? [test.metadata.source] : []),
+      steps: test.steps || test.metadata?.original_steps || (test.instructions ? test.instructions.split('\n').filter(line => line.trim()) : []),
+      created_at: test.created_at || null,
+      updated_at: test.updated_at || test.created_at || null,
+      status: test.status || 'pending',
+      lastRun: test.lastRun || test.completed_at || null
     }));
     
     return NextResponse.json(serializedTests);

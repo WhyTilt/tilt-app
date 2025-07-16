@@ -19,6 +19,12 @@ export interface ExecutionData {
   screenshots?: string[];
   thoughts?: string[];
   actions?: string[];
+  chatMessages?: Array<{
+    id: string;
+    message: string;
+    timestamp: string;
+    from: 'user' | 'agent';
+  }>;
 }
 
 interface TestRunnerContextType {
@@ -41,6 +47,8 @@ interface TestRunnerContextType {
   updateExecutionData: (data: ExecutionData) => void;
   setExecutionPanelOpen: (isOpen: boolean) => void;
   cleanupBrowserOnly: () => Promise<void>;
+  sendMessageToAgent: (message: string) => Promise<void>;
+  injectMessageToAgent: (message: string) => void;
 }
 
 const TestRunnerContext = createContext<TestRunnerContextType | undefined>(undefined);
@@ -218,21 +226,94 @@ export function TestRunnerProvider({ children }: TestRunnerProviderProps) {
     setIsExecutionPanelOpen(isOpen);
   }, []);
 
+  const sendMessageToAgent = useCallback(async (message: string) => {
+    if (!executingTest) {
+      console.warn('No test is currently executing');
+      return;
+    }
+
+    console.log('🔥 CHAT: Sending user message to agent:', message);
+    
+    // Add the chat message as a separate chat message, not mixed with thoughts
+    const chatMessage = {
+      id: `user-${Date.now()}`,
+      message: message,
+      timestamp: new Date().toISOString(),
+      from: 'user' as const
+    };
+
+    setExecutionData(prevData => ({
+      ...prevData,
+      chatMessages: [
+        ...(prevData.chatMessages || []),
+        chatMessage
+      ]
+    }));
+
+    // CRITICAL: Directly inject the message into the conversation via global function
+    // This is the most reliable way to ensure the message gets to the agent
+    if (typeof window !== 'undefined') {
+      if ((window as any).injectUserMessage) {
+        console.log('🔥 CHAT: Using direct injection method');
+        (window as any).injectUserMessage(message);
+      } else {
+        console.log('🔥 CHAT: Using event method as fallback');
+        const event = new CustomEvent('userMessage', { 
+          detail: { message } 
+        });
+        window.dispatchEvent(event);
+      }
+    }
+
+    try {
+      // Send message to agent via v2 API  
+      const response = await fetch(`/api/v2/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testId: executingTest.id,
+          message: message,
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        console.log('🔥 CHAT: Message sent to agent API successfully');
+      } else {
+        console.warn('🔥 CHAT: Failed to send message to agent API:', response.status);
+      }
+      
+    } catch (error) {
+      console.error('🔥 CHAT: Error sending message to agent API:', error);
+    }
+  }, [executingTest]);
+
+  const injectMessageToAgent = useCallback((message: string) => {
+    // This will be used by the test runner to inject messages during execution
+    if (typeof window !== 'undefined') {
+      (window as any).pendingUserMessage = message;
+    }
+  }, []);
+
   return (
     <TestRunnerContext.Provider
       value={{
         runState,
         executingTest,
         executionData,
+        errorType,
         isExecutionPanelOpen,
         startExecution,
         pauseExecution,
         resumeExecution,
         stopExecution,
         completeExecution,
+        setExecutionError,
         updateExecutionData,
         setExecutionPanelOpen,
         cleanupBrowserOnly,
+        sendMessageToAgent,
+        injectMessageToAgent,
       }}
     >
       {children}

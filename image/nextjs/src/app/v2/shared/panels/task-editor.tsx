@@ -27,8 +27,9 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isTagOperation, setIsTagOperation] = useState(false);
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<{name: string, color: string}[]>([]);
   const [tagSearchTerm, setTagSearchTerm] = useState('');
+  const [showTagSearch, setShowTagSearch] = useState(false);
 
   useEffect(() => {
     if (test) {
@@ -47,14 +48,13 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await fetch('/api/v2/tests');
+        const response = await fetch('/api/v2/tags');
         if (response.ok) {
-          const tests = await response.json();
-          const uniqueTags = [...new Set(tests.flatMap((test: Test) => test.tags || []))];
-          setAllTags(uniqueTags);
+          const tags = await response.json();
+          setAllTags(tags);
         }
       } catch (error) {
-        console.error('Failed to fetch tests for tags:', error);
+        console.error('Failed to fetch tags:', error);
       }
     };
 
@@ -313,9 +313,14 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                       key={tag}
                       onClick={async () => {
                         setIsTagOperation(true);
-                        await fetch(`/api/v2/tags/${encodeURIComponent(tag)}`, {
-                          method: 'DELETE',
+                        // Remove tag from current test only
+                        const updatedTags = editingTest.tags.filter(t => t !== tag);
+                        setEditingTest({
+                          ...editingTest,
+                          tags: updatedTags
                         });
+                        // Trigger auto-save
+                        debouncedAutoSave();
                         setIsTagOperation(false);
                       }}
                       className="flex items-center gap-1 px-2 py-1 bg-[var(--accent-color-light)] border border-[var(--accent-color)] text-[var(--accent-color)] rounded-md text-xs hover:bg-[var(--accent-color)] hover:text-white transition-colors"
@@ -327,7 +332,10 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                   
                   {/* Add new tag button */}
                   <button
-                    onClick={() => setTagSearchTerm(' ')}
+                    onClick={() => {
+                      setShowTagSearch(true);
+                      setTagSearchTerm('');
+                    }}
                     className="flex items-center gap-1 px-2 py-1 bg-zinc-700 border border-zinc-600 text-gray-300 rounded-md text-xs hover:bg-zinc-600 transition-colors"
                   >
                     + add tag
@@ -336,12 +344,22 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
               </div>
 
               {/* Search Field - only show when searching */}
-              {tagSearchTerm && (
+              {showTagSearch && (
                 <>
                   <input
                     type="text"
                     value={tagSearchTerm.trim()}
                     onChange={(e) => setTagSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setShowTagSearch(false);
+                        setTagSearchTerm('');
+                      }
+                    }}
+                    onBlur={() => {
+                      // Small delay to allow clicks on tag buttons
+                      setTimeout(() => setShowTagSearch(false), 150);
+                    }}
                     placeholder="Type to search and add tags..."
                     className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--accent-color)] focus:ring-1 focus:ring-[var(--accent-color)] outline-none mb-3"
                     autoFocus
@@ -351,30 +369,37 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {allTags
                       .filter(tag => 
-                        (tagSearchTerm.trim() === '' || tag.toLowerCase().includes(tagSearchTerm.toLowerCase().trim())) &&
-                        !(editingTest.tags || []).includes(tag)
+                        (tagSearchTerm.trim() === '' || tag.name.toLowerCase().includes(tagSearchTerm.toLowerCase().trim())) &&
+                        !(editingTest.tags || []).includes(tag.name)
                       )
                       .map(tag => (
                         <button
-                          key={tag}
+                          key={tag.name}
                           onClick={() => {
                             const updatedTest = { 
                               ...editingTest, 
-                              tags: [...(editingTest.tags || []), tag] 
+                              tags: [...(editingTest.tags || []), tag.name] 
                             };
                             setEditingTest(updatedTest);
                             setTagSearchTerm('');
+                            setShowTagSearch(false);
                             debouncedAutoSave();
                           }}
                           className="w-full text-left px-3 py-2 bg-zinc-800/50 border border-zinc-700 text-gray-300 hover:bg-zinc-700/50 rounded-lg transition-colors"
                         >
-                          <span className="font-medium">{tag}</span>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: tag.color }}
+                            />
+                            <span className="font-medium">{tag.name}</span>
+                          </div>
                         </button>
                       ))}
                     
                     {/* Option to create new tag */}
                     {tagSearchTerm.trim() && !allTags.some(tag => 
-                      tag.toLowerCase() === tagSearchTerm.toLowerCase().trim()
+                      tag.name.toLowerCase() === tagSearchTerm.toLowerCase().trim()
                     ) && (
                       <button
                         onClick={() => {
@@ -384,8 +409,9 @@ export function TaskEditorPanel({ test, isOpen, onClose, onSave }: TaskEditorPan
                             tags: [...(editingTest.tags || []), newTag] 
                           };
                           setEditingTest(updatedTest);
-                          setAllTags(prev => [...prev, newTag]);
+                          setAllTags(prev => [...prev, { name: newTag, color: '#3b82f6' }]);
                           setTagSearchTerm('');
+                          setShowTagSearch(false);
                           debouncedAutoSave();
                         }}
                         className="w-full text-left px-3 py-2 bg-zinc-700/50 border border-zinc-600 text-[var(--accent-color)] hover:bg-zinc-600/50 rounded-lg transition-colors"

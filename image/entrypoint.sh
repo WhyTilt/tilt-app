@@ -23,9 +23,9 @@ done
 echo "Initializing MongoDB database..."
 mongosh < ./image/init_mongodb.js > /dev/null 2>&1
 
-# Reset all tasks and app state to idle
-echo "Resetting tasks and app state..."
-mongosh < ./image/reset_tasks.js > /dev/null 2>&1
+# Reset all tests and app state to idle
+echo "Resetting tests and app state..."
+mongosh < ./image/reset_tests.js > /dev/null 2>&1
 
 # Copy config files from mounted image directory
 echo "Setting up config files..."

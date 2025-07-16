@@ -38,6 +38,18 @@ export function TestRunner() {
     
     console.log('🔥 TestRunner: Starting agent execution for test:', executingTest.name);
     
+    // Listen for user messages to inject into the conversation
+    const handleUserMessage = (event: CustomEvent) => {
+      const userMessage = {
+        role: 'user' as const,
+        content: event.detail.message
+      };
+      console.log('🔥 Injecting user message into conversation:', event.detail.message);
+      addMessage(userMessage);
+    };
+    
+    window.addEventListener('userMessage', handleUserMessage as EventListener);
+    
     // Reset state
     streamingMessageRef.current = '';
     currentThoughtsRef.current = [];
@@ -222,6 +234,9 @@ When you have completed all steps, use the mongodb_reporter tool to save the tes
           case 'done':
             console.log('🔥 Agent execution completed');
             
+            // Cleanup event listener
+            window.removeEventListener('userMessage', handleUserMessage as EventListener);
+            
             // Add final assistant message
             if (streamingMessageRef.current) {
               addMessage({
@@ -236,6 +251,9 @@ When you have completed all steps, use the mongodb_reporter tool to save the tes
             
           case 'error':
             console.error('🔥 Agent error:', event);
+            
+            // Cleanup event listener
+            window.removeEventListener('userMessage', handleUserMessage as EventListener);
             
             // Check for credit balance error
             const errorMessage = event.message || '';
@@ -269,6 +287,9 @@ ${errorMessage || 'An unexpected error occurred during test execution.'}`
       });
     } catch (error) {
       console.error('🔥 Agent execution failed:', error);
+      
+      // Cleanup event listener
+      window.removeEventListener('userMessage', handleUserMessage as EventListener);
       
       // Check for credit balance error
       const errorMessage = (error as any)?.message || error?.toString() || '';

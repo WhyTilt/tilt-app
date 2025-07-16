@@ -80,79 +80,22 @@ export async function PUT(
     
     let updatedTest = null;
     
-    // If not found in tests, try tasks collection
-    if (result.matchedCount === 0) {
-      collection = db.collection('tasks');
-      
-      // For tasks collection, update the label and metadata fields
-      const taskUpdateData: any = {
-        updated_at: new Date().toISOString()
-      };
-      
-      if (name !== undefined) {
-        taskUpdateData.label = name;
-      }
-      
-      if (tags !== undefined) {
-        // Store first tag in metadata.source for compatibility
-        if (tags.length > 0) {
-          taskUpdateData['metadata.source'] = tags[0];
-        }
-      }
-      
-      if (steps !== undefined) {
-        taskUpdateData['metadata.original_steps'] = steps;
-      }
-      
-      // Handle tag removal separately
-      if (tags !== undefined && tags.length === 0) {
-        // Remove the metadata.source field if no tags
-        result = await collection.updateOne(
-          { _id: new ObjectId(params.id) },
-          { 
-            $set: taskUpdateData,
-            $unset: { 'metadata.source': '' }
-          }
-        );
-      } else {
-        // Normal update
-        result = await collection.updateOne(
-          { _id: new ObjectId(params.id) },
-          { $set: taskUpdateData }
-        );
-      }
-      
-      if (result.matchedCount > 0) {
-        // Get the updated task and convert to test format
-        const updatedTask = await collection.findOne({ _id: new ObjectId(params.id) });
-        if (updatedTask) {
-          updatedTest = {
-            id: updatedTask._id.toString(),
-            name: updatedTask.label || updatedTask.instructions?.substring(0, 100) + '...' || 'Untitled Task',
-            tags: updatedTask.metadata?.source ? [updatedTask.metadata.source] : [],
-            steps: updatedTask.metadata?.original_steps || [],
-            created_at: updatedTask.created_at || null,
-            updated_at: updatedTask.updated_at || null
-          };
-        }
-      }
-    } else {
-      // Get updated test from tests collection
-      updatedTest = await collection.findOne({ _id: new ObjectId(params.id) });
-      if (updatedTest) {
-        updatedTest = {
-          ...updatedTest,
-          id: updatedTest._id.toString(),
-          _id: undefined
-        };
-      }
-    }
-    
+    // Test not found
     if (result.matchedCount === 0) {
       return NextResponse.json(
         { error: 'Test not found' },
         { status: 404 }
       );
+    }
+    
+    // Get updated test from tests collection
+    updatedTest = await collection.findOne({ _id: new ObjectId(params.id) });
+    if (updatedTest) {
+      updatedTest = {
+        ...updatedTest,
+        id: updatedTest._id.toString(),
+        _id: undefined
+      };
     }
     
     console.log('PUT /api/v2/tests/[id] - Updated test:', updatedTest);

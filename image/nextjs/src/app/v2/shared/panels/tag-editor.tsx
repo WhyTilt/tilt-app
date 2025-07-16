@@ -13,6 +13,12 @@ interface Test {
   updated_at: string;
 }
 
+interface Tag {
+  name: string;
+  color: string;
+  description: string;
+}
+
 interface TagEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,11 +27,12 @@ interface TagEditorPanelProps {
 }
 
 export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: TagEditorPanelProps) {
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingTag, setEditingTag] = useState<string | null>(null);
   const [tagName, setTagName] = useState('');
+  const [tagColor, setTagColor] = useState('#3b82f6');
   const [isCreating, setIsCreating] = useState(false);
 
   // Fetch all unique tags from tests
@@ -46,7 +53,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
       
       if (!response.ok) throw new Error('Failed to fetch tags');
       
-      const tags: string[] = await response.json();
+      const tags: Tag[] = await response.json();
       console.log('Fetched tags:', tags);
       setAllTags(tags);
     } catch (err) {
@@ -60,19 +67,39 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
   const startCreating = () => {
     setEditingTag(null);
     setTagName('');
+    setTagColor('#3b82f6');
     setIsCreating(true);
   };
 
-  const startEditing = (tag: string) => {
-    setEditingTag(tag);
-    setTagName(tag);
+  const startEditing = (tagName: string) => {
+    const tag = allTags.find(t => t.name === tagName);
+    setEditingTag(tagName);
+    setTagName(tagName);
+    setTagColor(tag?.color || '#3b82f6');
     setIsCreating(true);
   };
 
   const cancelEditing = () => {
     setEditingTag(null);
     setTagName('');
+    setTagColor('#3b82f6');
     setIsCreating(false);
+  };
+
+  const updateTagColor = async (tagName: string, color: string) => {
+    try {
+      const response = await fetch(`/api/v2/tags/${encodeURIComponent(tagName)}/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ color })
+      });
+      
+      if (!response.ok) throw new Error('Failed to update tag color');
+      return true;
+    } catch (error) {
+      console.error('Error updating tag color:', error);
+      return false;
+    }
   };
 
   const handleSaveTag = async () => {
@@ -85,10 +112,11 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
           method: 'DELETE',
         });
         
-        // Create the new tag in the tags collection
+        // Create the new tag in the tags collection with color
         await fetch(`/api/v2/tags/${encodeURIComponent(tagName.trim())}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color: tagColor })
         });
         
         // Rename existing tag across all tests
@@ -116,7 +144,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
         }
       } else {
         // Creating a new tag - check if it already exists
-        if (allTags.includes(tagName.trim())) {
+        if (allTags.some(tag => tag.name === tagName.trim())) {
           setError('Tag already exists');
           return;
         }
@@ -125,7 +153,8 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
         console.log('Creating tag:', tagName.trim());
         const createResponse = await fetch(`/api/v2/tags/${encodeURIComponent(tagName.trim())}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color: tagColor })
         });
         
         console.log('Create response status:', createResponse.status);
@@ -281,6 +310,28 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
               />
             </div>
 
+            {/* Color Picker */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Tag Color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={tagColor}
+                  onChange={(e) => setTagColor(e.target.value)}
+                  className="w-12 h-8 rounded cursor-pointer border border-zinc-700"
+                />
+                <div 
+                  className="px-3 py-1 rounded-md text-xs font-medium text-white"
+                  style={{ backgroundColor: tagColor }}
+                >
+                  {tagName.trim() || 'Sample Tag'}
+                </div>
+                <span className="text-xs text-gray-400">{tagColor}</span>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={(e) => {
@@ -337,15 +388,15 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
           <div className="space-y-3">
             {allTags.map(tag => {
               // Calculate tag state for selected tests
-              const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag));
+              const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag.name));
               const hasTag = testsWithTag.length > 0;
               const partialTag = testsWithTag.length > 0 && testsWithTag.length < selectedTests.length;
               const isClickable = selectedTests.length > 0;
               
               return (
                 <div
-                  key={tag}
-                  onClick={isClickable ? () => handleBulkTagToggle(tag) : undefined}
+                  key={tag.name}
+                  onClick={isClickable ? () => handleBulkTagToggle(tag.name) : undefined}
                   className={`
                     flex items-center justify-between p-3 border rounded-lg transition-colors
                     ${isClickable ? 'cursor-pointer' : ''}
@@ -366,19 +417,22 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
                       : undefined
                   }
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-medium ${hasTag && isClickable ? 'text-white' : 'text-white'}`}>
-                      {tag}
-                      {partialTag && isClickable && (
-                        <span className="ml-2 text-xs opacity-70">({testsWithTag.length}/{selectedTests.length})</span>
-                      )}
+                  <div className="flex-1 min-w-0 flex items-center gap-3">
+                    <div 
+                      className="px-3 py-1 rounded-md text-xs font-medium text-white"
+                      style={{ backgroundColor: tag.color }}
+                    >
+                      {tag.name}
                     </div>
+                    {partialTag && isClickable && (
+                      <span className="text-xs text-gray-400">({testsWithTag.length}/{selectedTests.length})</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 ml-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        startEditing(tag);
+                        startEditing(tag.name);
                       }}
                       className="p-1 text-gray-400 hover:text-white transition-colors"
                       title="Edit"
@@ -389,7 +443,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteTag(tag);
+                        handleDeleteTag(tag.name);
                       }}
                       className="p-1 text-gray-400 hover:text-red-400 transition-colors"
                       title="Delete"

@@ -133,7 +133,11 @@
       "Bash(getent:*)",
       "Bash(./release.sh)",
       "Bash(journalctl:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(git describe:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv add:*)"
     ],
     "deny": []
   }

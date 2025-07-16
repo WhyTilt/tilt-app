@@ -149,7 +149,7 @@ Example tool structure:
 from .base import BaseAnthropicTool, ToolResult
 
 class MyCustomTool(BaseAnthropicTool):
-    """Tool for performing custom automation tasks."""
+    """Tool for performing website functional and integration testing without simulations or headless browsers."""
     
     name: str = "my_custom_tool"
     

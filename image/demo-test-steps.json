@@ -1,0 +1,135 @@
+{
+ "tests": [
+   {
+     "label": "Guest checkout flow completes successfully",
+     "steps": [
+       "Navigate to airbnb.com",
+       "Search for 'San Francisco' with check-in next month",
+       "Click on the first available property",
+       "Select dates and 2 guests",
+       "Click 'Reserve' button",
+       "Fill in guest information form",
+       "Enter payment details (test card)",
+       "Verify booking summary shows correct dates and price",
+       "Click 'Confirm and pay'",
+       "Assert confirmation page displays booking reference number"
+     ]
+   },
+   {
+     "label": "Search filters apply correctly to listings",
+     "steps": [
+       "Go to airbnb.com homepage",
+       "Search for 'New York City'",
+       "Apply price filter: $100-300 per night",
+       "Select 'Entire place' filter",
+       "Add 'Wifi' amenity filter",
+       "Verify all displayed listings show price within range",
+       "Assert listing cards display 'Entire place' property type",
+       "Check that amenities section includes Wifi for each result"
+     ]
+   },
+   {
+     "label": "Property details page loads all amenities",
+     "steps": [
+       "Navigate to any property listing page",
+       "Scroll to amenities section",
+       "Click 'Show all amenities' button",
+       "Verify modal opens with complete amenities list",
+       "Assert amenities are categorized (Kitchen, Bathroom, etc.)",
+       "Check that unavailable amenities are clearly marked",
+       "Close modal and verify page returns to previous state"
+     ]
+   },
+   {
+     "label": "Date picker prevents past date selection",
+     "steps": [
+       "Open airbnb.com",
+       "Click on date picker for check-in",
+       "Attempt to select yesterday's date",
+       "Verify past dates are disabled/grayed out",
+       "Try clicking on a past date",
+       "Assert no date selection occurs",
+       "Select a future date and verify it's accepted",
+       "Check that check-out date is automatically after check-in"
+     ]
+   },
+   {
+     "label": "User login persists across page navigation",
+     "steps": [
+       "Click 'Log in' on homepage",
+       "Enter valid credentials and sign in",
+       "Verify user avatar appears in header",
+       "Navigate to a property listing page",
+       "Assert user remains logged in (avatar visible)",
+       "Go to user profile page",
+       "Refresh the browser page",
+       "Confirm user session persists after refresh"
+     ]
+   },
+   {
+     "label": "Booking confirmation email triggers",
+     "steps": [
+       "Complete a test booking with valid email",
+       "Reach the confirmation page",
+       "Note the booking confirmation number",
+       "Wait 30 seconds for email processing",
+       "Check test email inbox for confirmation message",
+       "Verify email contains correct booking details",
+       "Assert email includes property name and dates",
+       "Confirm email has proper Airbnb branding"
+     ]
+   },
+   {
+     "label": "Price calculation updates with guest count",
+     "steps": [
+       "Select a property listing",
+       "Note the base price displayed",
+       "Change guest count from 1 to 3 guests",
+       "Verify price updates automatically",
+       "Check that additional guest fees are shown",
+       "Modify dates to longer stay",
+       "Assert nightly rate and total price recalculate",
+       "Verify cleaning fee and taxes are added correctly"
+     ]
+   },
+   {
+     "label": "Map view syncs with search results",
+     "steps": [
+       "Search for 'Los Angeles' on homepage",
+       "Switch to map view",
+       "Verify pins match the number of search results",
+       "Click on a map pin",
+       "Assert property card highlights in results list",
+       "Zoom in on map area",
+       "Check that search results update to show only visible properties",
+       "Pan map to different area and verify results refresh"
+     ]
+   },
+   {
+     "label": "Review submission validates required fields",
+     "steps": [
+       "Go to a completed booking in user account",
+       "Click 'Write a review' button",
+       "Try submitting review without rating",
+       "Verify error message appears for missing rating",
+       "Add star rating but leave comment empty",
+       "Attempt submission and check for comment requirement",
+       "Fill in all required fields properly",
+       "Submit review and verify success confirmation"
+     ]
+   },
+   {
+     "label": "Mobile responsive design maintains functionality",
+     "steps": [
+       "Resize browser to mobile width (375px)",
+       "Navigate to airbnb.com",
+       "Verify hamburger menu appears",
+       "Test search functionality on mobile layout",
+       "Check that property cards stack vertically",
+       "Tap on a property listing",
+       "Scroll through property details smoothly",
+       "Verify all buttons remain clickable and properly sized"
+     ]
+   }
+ ]
+}

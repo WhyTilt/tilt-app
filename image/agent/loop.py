@@ -72,7 +72,11 @@ SYSTEM_PROMPT = f"""<SYSTEM_CAPABILITY>
 * Use `code formatting` for specific values, coordinates, URLs, and technical terms
 * Create clear sections with headers when describing multi-step processes
 * Use bullet points and numbered lists for better readability
-* Include emojis sparingly but effectively to indicate status (✅ ❌ 🔍 📝 🖱️ ⌨️)
+* DO NOT use emojis in test execution reports - maintain professional QA engineer tone
+* For test execution reports, use clean numbered lists with proper line breaks:
+  1. **Step Name** - Result description
+  2. **Next Step** - Result description
+* Use clear section headers like "## Test Results Summary" and "## Key Findings"
 * Keep your responses conversational but professional
 * Make your text engaging and easy to scan at a glance
 </RESPONSE_FORMATTING>
@@ -174,6 +178,32 @@ async def sampling_loop(
     )
 
     while True:
+        # Check for pending chat messages from user
+        try:
+            tool_logger.info("Checking for pending chat messages...")
+            chat_messages = await _check_for_chat_messages()
+            tool_logger.info(f"Chat message check completed. Found: {len(chat_messages) if chat_messages else 0} messages")
+            
+            if chat_messages:
+                tool_logger.info(f"PROCESSING {len(chat_messages)} PENDING CHAT MESSAGES")
+                # Add user messages to conversation
+                for chat_msg in chat_messages:
+                    messages.append({
+                        "role": "user", 
+                        "content": chat_msg
+                    })
+                    tool_logger.info(f"ADDED USER CHAT MESSAGE: {chat_msg}")
+                    print(f"[CHAT] User message added to conversation: {chat_msg}")
+                    
+                    # Also send to output callback so it appears in the UI
+                    output_callback({
+                        "type": "text",
+                        "text": f"**User sent:** {chat_msg}"
+                    })
+        except Exception as e:
+            tool_logger.error(f"Error checking chat messages: {e}")
+            print(f"[CHAT ERROR] {e}")
+        
         enable_prompt_caching = False
         betas = [tool_group.beta_flag] if tool_group.beta_flag else []
         if token_efficient_tools_beta:
@@ -426,3 +456,52 @@ def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str):
     if result.system:
         result_text = f"<system>{result.system}</system>\n{result_text}"
     return result_text
+
+
+async def _check_for_chat_messages():
+    """Check for pending chat messages from user and return them"""
+    try:
+        from pymongo import MongoClient
+        
+        print("[CHAT DEBUG] Connecting to MongoDB...")
+        # Connect to MongoDB
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client.tilt
+        interrupts_collection = db.interrupts
+        print("[CHAT DEBUG] Connected to MongoDB successfully")
+        
+        # Get ALL unprocessed messages (since we don't have test ID context here yet)
+        # This is simple but works - we'll process any pending chat messages
+        print("[CHAT DEBUG] Querying for unprocessed messages...")
+        messages = list(interrupts_collection.find({
+            "processed": False
+        }).sort("created_at", 1))
+        
+        print(f"[CHAT DEBUG] Found {len(messages)} total unprocessed messages in database")
+        
+        if not messages:
+            print("[CHAT DEBUG] No pending messages found")
+            return []
+        
+        for i, msg in enumerate(messages):
+            print(f"[CHAT DEBUG] Message {i+1}: test_id={msg.get('test_id')}, message='{msg.get('message')}', processed={msg.get('processed')}")
+        
+        print(f"[CHAT DEBUG] Marking {len(messages)} messages as processed")
+        
+        # Mark messages as processed
+        message_ids = [msg["_id"] for msg in messages]
+        interrupts_collection.update_many(
+            {"_id": {"$in": message_ids}},
+            {"$set": {"processed": True}}
+        )
+        
+        # Return just the message text
+        result = [msg["message"] for msg in messages]
+        print(f"[CHAT DEBUG] Returning {len(result)} messages: {result}")
+        return result
+        
+    except Exception as e:
+        print(f"[CHAT DEBUG] Error checking for chat messages: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
