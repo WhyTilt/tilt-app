@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, FileText, Play, Square, Tag, Plus, X, Edit2, Trash2, ChevronDown } from 'lucide-react';
 import { useTestRunner } from '@/app/v2/test-runner/context';
 
@@ -11,6 +11,12 @@ interface Test {
   steps: string[];
   created_at: string;
   updated_at: string;
+}
+
+interface Tag {
+  name: string;
+  color: string;
+  description: string;
 }
 
 interface TestFilterListProps {
@@ -30,7 +36,30 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
   const [selectedTests, setSelectedTests] = useState<Test[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
+  const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Helper function to get tag color by name
+  const getTagColor = (tagName: string): string => {
+    const tag = allTags.find(t => t.name === tagName);
+    return tag?.color || '#3b82f6';
+  };
+
+  // Helper function to toggle tag filter selection
+  const toggleTagFilter = (tagName: string) => {
+    setSelectedTagFilters(prev =>
+      prev.includes(tagName)
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  // Helper function to clear all tag filters
+  const clearTagFilters = () => {
+    setSelectedTagFilters([]);
+  };
 
   // Fetch tests and extract tags
   useEffect(() => {
@@ -89,8 +118,17 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
       );
     }
 
+    // Filter by selected tags
+    if (selectedTagFilters.length > 0) {
+      filtered = filtered.filter(test =>
+        selectedTagFilters.some(tagFilter => 
+          test.tags && test.tags.includes(tagFilter)
+        )
+      );
+    }
+
     setFilteredTests(filtered);
-  }, [tests, searchTerm]);
+  }, [tests, searchTerm, selectedTagFilters]);
 
   // Notify parent component when selected tests change
   useEffect(() => {
@@ -98,6 +136,20 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
       onSelectedTestsChange(selectedTests);
     }
   }, [selectedTests, onSelectedTestsChange]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(event.target as Node)) {
+        setIsTagDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
 
   const toggleTestSelection = (test: Test) => {
@@ -212,6 +264,14 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           >
             <FileText size={16} />
           </button>
+          
+          <button
+            onClick={() => onTagEditorOpen && onTagEditorOpen()}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+            title="Manage Tags"
+          >
+            <Tag size={16} />
+          </button>
         </div>
       </div>
 
@@ -229,17 +289,91 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           />
         </div>
 
-        {/* Test Controls Row */}
-        <div className="flex items-center justify-end gap-2">
-          {/* Tag Management Button */}
+        {/* Tag Filter */}
+        <div className="relative" ref={tagDropdownRef}>
           <button
-            onClick={() => onTagEditorOpen && onTagEditorOpen()}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-            title="Manage Tags"
+            onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+            className="w-full flex items-center justify-between px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm hover:border-[var(--accent-color)] transition-colors"
           >
-            <Tag size={16} />
+            <div className="flex items-center gap-2">
+              <Tag size={14} className="text-gray-400" />
+              <span className="text-gray-400">
+                {selectedTagFilters.length === 0 
+                  ? 'Filter by tags...' 
+                  : `${selectedTagFilters.length} tag${selectedTagFilters.length === 1 ? '' : 's'} selected`
+                }
+              </span>
+            </div>
+            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTagDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
+          {/* Dropdown */}
+          {isTagDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10">
+              <div className="p-2">
+                {/* Clear filters option */}
+                {selectedTagFilters.length > 0 && (
+                  <button
+                    onClick={clearTagFilters}
+                    className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-zinc-700 rounded"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+                
+                {/* Tag options */}
+                {allTags.length > 0 ? (
+                  allTags.map(tag => (
+                    <button
+                      key={tag.name}
+                      onClick={() => toggleTagFilter(tag.name)}
+                      className="w-full text-left px-2 py-1 hover:bg-zinc-700 rounded flex items-center gap-2"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        <span className="text-white text-sm">{tag.name}</span>
+                      </div>
+                      {selectedTagFilters.includes(tag.name) && (
+                        <div className="w-4 h-4 bg-[var(--accent-color)] rounded flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-2 py-1 text-xs text-gray-400">No tags available</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Selected tag filters display */}
+        {selectedTagFilters.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {selectedTagFilters.map(tagName => (
+              <span
+                key={tagName}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-white"
+                style={{ backgroundColor: getTagColor(tagName) }}
+              >
+                {tagName}
+                <button
+                  onClick={() => toggleTagFilter(tagName)}
+                  className="hover:bg-black/20 rounded"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Test Controls Row */}
+        <div className="flex items-center justify-end gap-2 pr-2">
           {/* Check All Checkbox */}
           <div
             onClick={() => {
@@ -338,7 +472,8 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
                           {test.tags.map(tag => (
                             <span 
                               key={tag}
-                              className="bg-[var(--accent-color-light)] text-[var(--accent-color)] px-2 py-1 rounded-md text-xs font-medium"
+                              className="px-2 py-1 rounded-md text-xs font-medium text-white"
+                              style={{ backgroundColor: getTagColor(tag) }}
                             >
                               {tag}
                             </span>
