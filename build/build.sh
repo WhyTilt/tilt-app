@@ -2,6 +2,9 @@
 
 set -e
 
+# Change to parent directory so Docker context and paths are consistent
+cd "$(dirname "$0")/.."
+
 # Function to show usage
 show_usage() {
     echo "Usage: $0 [dev|prod]"
