@@ -57,11 +57,14 @@ API_PID=$!
 echo "Starting Next.js app..." | tee -a "$LOGS_DIR/startup.log"
 
 # Use dedicated dev mount if in dev mode, otherwise use regular path
-if [ "$DEV_MODE" = "true" ]; then
+if [ "$DEV_MODE" = "true" ] && [ -d "/home/tilt/nextjs-dev" ]; then
     cd /home/tilt/nextjs-dev
     echo "Using dedicated dev mount for better file watching..." | tee -a "$LOGS_DIR/startup.log"
 else
     cd /home/tilt/image/nextjs
+    if [ "$DEV_MODE" = "true" ]; then
+        echo "Using standard nextjs path for development..." | tee -a "$LOGS_DIR/startup.log"
+    fi
 fi
 
 # Ensure .next directory exists with correct permissions

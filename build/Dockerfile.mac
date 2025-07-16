@@ -80,22 +80,28 @@ RUN usermod -aG sudo mongodb && \
 # Stage 3: User applications layer
 FROM system-packages AS user-apps
 
-# Install Chromium browser (ARM64)
+# Install dependencies and add Xtradeb PPA for Chromium .deb
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    chromium-browser \
+    apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:xtradeb/apps && \
+    apt-get update
+
+# Install Chromium and other applications
+RUN apt-get install -y --no-install-recommends \
+    chromium \
     x11-apps \
     xpdf \
     tint2 \
     pcmanfm \
     unzip && \
-    apt-get clean
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create chromium aliases for compatibility
-RUN ln -sf /usr/bin/chromium-browser /usr/bin/chromium
+RUN ln -sf /usr/bin/chromium /usr/bin/chromium-browser
 
 # Set browser binary environment variable
-ENV BROWSER_BINARY=/usr/bin/chromium-browser
+ENV BROWSER_BINARY=/usr/bin/chromium
 
 # Install noVNC
 RUN git clone --branch v1.5.0 https://github.com/novnc/noVNC.git /opt/noVNC && \
