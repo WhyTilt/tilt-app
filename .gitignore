@@ -15,6 +15,12 @@ __pycache__/
 *.so
 .pytest_cache
 
+# Python virtual environments
+venv/
+.venv/
+env/
+.env
+
 # Large binary files that should not be committed
 *.deb
 *.pkg
