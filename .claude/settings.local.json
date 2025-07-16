@@ -137,7 +137,8 @@
       "Bash(git describe:*)",
       "Bash(powershell.exe:*)",
       "Bash(uv venv:*)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": []
   }
