@@ -27,6 +27,8 @@ interface TagEditorPanelProps {
 }
 
 export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: TagEditorPanelProps) {
+  // Ensure selectedTests is always an array
+  const safeSelectedTests = Array.isArray(selectedTests) ? selectedTests : [];
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +56,14 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
       if (!response.ok) throw new Error('Failed to fetch tags');
       
       const tags: Tag[] = await response.json();
-      console.log('Fetched tags:', tags);
-      setAllTags(tags);
+      // console.log('Fetched tags count:', tags.length);
+      // Ensure all tags have proper structure
+      const validTags = tags.map(tag => ({
+        name: typeof tag === 'string' ? tag : tag.name,
+        color: typeof tag === 'string' ? '#3b82f6' : (tag.color || '#3b82f6'),
+        description: typeof tag === 'string' ? '' : (tag.description || '')
+      }));
+      setAllTags(validTags);
     } catch (err) {
       console.error('Error fetching tags:', err);
       setError(err instanceof Error ? err.message : 'Failed to load tags');
@@ -168,7 +176,8 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
         }
         
         // Immediately add to local state so it shows up right away
-        setAllTags(prev => [...prev, tagName.trim()].sort());
+        const newTag = { name: tagName.trim(), color: tagColor, description: '' };
+        setAllTags(prev => [...prev, newTag].sort((a, b) => a.name.localeCompare(b.name)));
       }
 
       await fetchTags();
@@ -180,22 +189,22 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
   };
 
   const handleBulkTagToggle = async (tag: string) => {
-    if (selectedTests.length === 0) return;
+    if (safeSelectedTests.length === 0) return;
 
     try {
       // Check how many selected tests have this tag
-      const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag));
-      const shouldAddTag = testsWithTag.length < selectedTests.length;
+      const testsWithTag = safeSelectedTests.filter(test => test.tags && test.tags.includes(tag));
+      const shouldAddTag = testsWithTag.length < safeSelectedTests.length;
       const action = shouldAddTag ? 'add' : 'remove';
       
-      console.log(`Bulk ${action} tag "${tag}" for ${selectedTests.length} tests`);
+      console.log(`Bulk ${action} tag "${tag}" for ${safeSelectedTests.length} tests`);
 
       // Single API call for bulk operation
       const response = await fetch('/api/v2/tests/bulk-tag', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          testIds: selectedTests.map(test => test.id),
+          testIds: safeSelectedTests.map(test => test.id),
           tag: tag,
           action: action
         })
@@ -361,11 +370,11 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
       </div>
 
       {/* Selected Tests Info */}
-      {selectedTests.length > 0 && (
+      {safeSelectedTests.length > 0 && (
         <div className="p-4 border-b border-zinc-700 bg-zinc-800/30">
           <h3 className="text-sm font-medium text-gray-300 mb-2">Bulk Tag Operations</h3>
           <p className="text-xs text-gray-400">
-            {selectedTests.length} test{selectedTests.length !== 1 ? 's' : ''} selected. Click tags below to toggle them for all selected tests.
+            {safeSelectedTests.length} test{safeSelectedTests.length !== 1 ? 's' : ''} selected. Click tags below to toggle them for all selected tests.
           </p>
         </div>
       )}
@@ -373,7 +382,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
       {/* Tags List */}
       <div className="flex-1 p-4">
         <h3 className="text-sm font-medium text-gray-300 mb-4">
-          {selectedTests.length > 0 ? 'Click tags to toggle for selected tests' : 'Existing Tags'}
+          {safeSelectedTests.length > 0 ? 'Click tags to toggle for selected tests' : 'Existing Tags'}
         </h3>
         
         {isLoading ? (
@@ -388,10 +397,10 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
           <div className="space-y-3">
             {allTags.map(tag => {
               // Calculate tag state for selected tests
-              const testsWithTag = selectedTests.filter(test => test.tags && test.tags.includes(tag.name));
+              const testsWithTag = safeSelectedTests.filter(test => test.tags && test.tags.includes(tag.name));
               const hasTag = testsWithTag.length > 0;
-              const partialTag = testsWithTag.length > 0 && testsWithTag.length < selectedTests.length;
-              const isClickable = selectedTests.length > 0;
+              const partialTag = testsWithTag.length > 0 && testsWithTag.length < safeSelectedTests.length;
+              const isClickable = safeSelectedTests.length > 0;
               
               return (
                 <div
@@ -410,7 +419,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
                   title={
                     isClickable
                       ? partialTag 
-                        ? `${testsWithTag.length}/${selectedTests.length} tests have this tag - click to toggle`
+                        ? `${testsWithTag.length}/${safeSelectedTests.length} tests have this tag - click to toggle`
                         : hasTag 
                           ? 'All selected tests have this tag - click to remove'
                           : 'None of the selected tests have this tag - click to add'
@@ -425,7 +434,7 @@ export function TagEditorPanel({ isOpen, onClose, onSave, selectedTests = [] }: 
                       {tag.name}
                     </div>
                     {partialTag && isClickable && (
-                      <span className="text-xs text-gray-400">({testsWithTag.length}/{selectedTests.length})</span>
+                      <span className="text-xs text-gray-400">({testsWithTag.length}/{safeSelectedTests.length})</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1 ml-3">

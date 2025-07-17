@@ -116,11 +116,27 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('DELETE /api/v2/tests/[id] - Attempting to delete test with ID:', params.id);
+    
+    // Validate ObjectId format
+    if (!ObjectId.isValid(params.id)) {
+      console.log('DELETE /api/v2/tests/[id] - Invalid ObjectId format:', params.id);
+      return NextResponse.json(
+        { error: 'Invalid test ID format' },
+        { status: 400 }
+      );
+    }
+    
     const client = await getClient();
     const db = client.db(DATABASE_NAME);
     const collection = db.collection('tests');
     
+    // First check if test exists
+    const existingTest = await collection.findOne({ _id: new ObjectId(params.id) });
+    console.log('DELETE /api/v2/tests/[id] - Test exists:', !!existingTest);
+    
     const result = await collection.deleteOne({ _id: new ObjectId(params.id) });
+    console.log('DELETE /api/v2/tests/[id] - Delete result:', result);
     
     if (result.deletedCount === 0) {
       return NextResponse.json(
@@ -133,7 +149,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting test:', error);
     return NextResponse.json(
-      { error: 'Failed to delete test' },
+      { error: `Failed to delete test: ${error.message}` },
       { status: 500 }
     );
   }

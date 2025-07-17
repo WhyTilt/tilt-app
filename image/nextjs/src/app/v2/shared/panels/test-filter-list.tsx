@@ -11,6 +11,11 @@ interface Test {
   steps: string[];
   created_at: string;
   updated_at: string;
+  status?: string;
+  lastRun?: {
+    status: 'pending' | 'running' | 'completed' | 'error' | 'passed' | 'failed';
+    timestamp?: string;
+  } | string;
 }
 
 interface Tag {
@@ -45,6 +50,29 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
   const getTagColor = (tagName: string): string => {
     const tag = allTags.find(t => t.name === tagName);
     return tag?.color || '#3b82f6';
+  };
+
+  // Helper function to get test status
+  const getTestStatus = (test: Test): { status: string; color: string; bgColor: string } => {
+    const lastRunStatus = typeof test.lastRun === 'object' ? test.lastRun?.status : null;
+    const testStatus = test.status || 'pending';
+    
+    // Prioritize lastRun status over test status
+    const effectiveStatus = lastRunStatus || testStatus;
+    
+    switch (effectiveStatus) {
+      case 'completed':
+      case 'passed':
+        return { status: 'PASS', color: '#10b981', bgColor: '#10b981/10' };
+      case 'error':
+      case 'failed':
+        return { status: 'FAIL', color: '#ef4444', bgColor: '#ef4444/10' };
+      case 'running':
+        return { status: 'RUN', color: '#f59e0b', bgColor: '#f59e0b/10' };
+      case 'pending':
+      default:
+        return { status: 'PEND', color: '#6b7280', bgColor: '#6b7280/10' };
+    }
   };
 
   // Helper function to toggle tag filter selection
@@ -92,8 +120,13 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           setAllTags(tagsData);
         } else {
           // Fallback to extracting tags from tests if API fails
-          const uniqueTags = [...new Set(testsData.flatMap((test: Test) => test.tags || []))];
-          setAllTags(uniqueTags);
+          const uniqueTagNames = [...new Set(testsData.flatMap((test: Test) => test.tags || []))];
+          const fallbackTags = uniqueTagNames.map(tagName => ({
+            name: tagName,
+            color: '#3b82f6', // Default blue color
+            description: ''
+          }));
+          setAllTags(fallbackTags);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -183,7 +216,7 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: 'New Test',
-          tags: allTags.length > 0 ? [allTags[0]] : [], // Use first tag if available, empty array if none
+          tags: allTags.length > 0 ? [allTags[0].name] : [], // Use first tag name if available, empty array if none
           steps: [],
         }),
       });
@@ -213,11 +246,22 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
     }
 
     try {
+      console.log('Attempting to delete test with ID:', testId);
+      
       const response = await fetch(`/api/v2/tests/${testId}`, { 
         method: 'DELETE' 
       });
       
-      if (!response.ok) throw new Error('Failed to delete test');
+      console.log('Delete response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Delete error response:', errorData);
+        throw new Error(errorData.error || `Failed to delete test (${response.status})`);
+      }
+      
+      const result = await response.json();
+      console.log('Delete success:', result);
       
       // Refresh data
       const testsResponse = await fetch('/api/v2/tests');
@@ -227,7 +271,11 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
       
       // Remove from selected tests if it was selected
       setSelectedTests(prev => prev.filter(t => t.id !== testId));
+      
+      // Clear any previous errors
+      setError(null);
     } catch (err) {
+      console.error('Delete test error:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete test');
     }
   };
@@ -434,33 +482,39 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        {/* Status Agent Head */}
-                        <img 
-                          src="/agent-head.png" 
-                          alt="Status"
-                          className={`w-4 h-4 ${
-                            !hasSteps 
-                              ? "opacity-30 grayscale" 
-                              : test.lastRun?.status === 'completed'
-                                ? "brightness-0 saturate-100"
-                                : test.lastRun?.status === 'error'
-                                  ? "brightness-0 saturate-100"
-                                  : test.lastRun?.status === 'running'
-                                    ? "brightness-0 saturate-100"
-                                    : "opacity-60 grayscale"
-                          }`}
-                          style={{
-                            filter: !hasSteps 
-                              ? "grayscale(1) opacity(0.3)" 
-                              : test.lastRun?.status === 'completed'
-                                ? "brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)" // green
-                                : test.lastRun?.status === 'error'
-                                  ? "brightness(0) saturate(100%) invert(18%) sepia(77%) saturate(7496%) hue-rotate(358deg) brightness(97%) contrast(94%)" // red
-                                  : test.lastRun?.status === 'running'
-                                    ? "brightness(0) saturate(100%) invert(82%) sepia(60%) saturate(2141%) hue-rotate(2deg) brightness(119%) contrast(115%)" // yellow
-                                    : "grayscale(1) opacity(0.6)" // gray
-                          }}
-                        />
+                        {/* Status Badge and Agent Head */}
+                        {(() => {
+                          const statusInfo = getTestStatus(test);
+                          return (
+                            <>
+                              <img 
+                                src="/agent-head.png" 
+                                alt="Agent Status"
+                                className={`w-4 h-4 ${!hasSteps ? "opacity-30" : ""}`}
+                                style={{
+                                  filter: !hasSteps 
+                                    ? "grayscale(1) opacity(0.3)" 
+                                    : statusInfo.status === 'PASS'
+                                      ? "brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)" // green
+                                      : statusInfo.status === 'FAIL'
+                                        ? "brightness(0) saturate(100%) invert(18%) sepia(77%) saturate(7496%) hue-rotate(358deg) brightness(97%) contrast(94%)" // red
+                                        : statusInfo.status === 'RUN'
+                                          ? "brightness(0) saturate(100%) invert(82%) sepia(60%) saturate(2141%) hue-rotate(2deg) brightness(119%) contrast(115%)" // yellow
+                                          : "grayscale(1) opacity(0.6)" // gray for pending
+                                }}
+                              />
+                              <div 
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${
+                                  !hasSteps ? 'opacity-30' : ''
+                                }`}
+                                style={{ backgroundColor: statusInfo.color }}
+                                title={`Status: ${statusInfo.status}`}
+                              >
+                                {statusInfo.status}
+                              </div>
+                            </>
+                          );
+                        })()}
                         <span className={`font-medium text-sm ${hasSteps ? "text-white" : "text-gray-400"} truncate`}>
                           {test.name}
                         </span>
@@ -469,15 +523,18 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
                       {/* Show tags */}
                       {test.tags && test.tags.length > 0 && (
                         <div className="flex items-center gap-1 mb-2 flex-wrap">
-                          {test.tags.map(tag => (
-                            <span 
-                              key={tag}
-                              className="px-2 py-1 rounded-md text-xs font-medium text-white"
-                              style={{ backgroundColor: getTagColor(tag) }}
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                          {test.tags.map(tag => {
+                            const tagName = typeof tag === 'string' ? tag : tag.name;
+                            return (
+                              <span 
+                                key={tagName}
+                                className="px-2 py-1 rounded-md text-xs font-medium text-white"
+                                style={{ backgroundColor: getTagColor(tagName) }}
+                              >
+                                {tagName}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                       

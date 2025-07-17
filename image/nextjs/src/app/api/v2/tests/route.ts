@@ -32,7 +32,13 @@ export async function GET() {
       created_at: test.created_at || null,
       updated_at: test.updated_at || test.created_at || null,
       status: test.status || 'pending',
-      lastRun: test.lastRun || test.completed_at || null
+      lastRun: test.lastRun ? {
+        status: test.lastRun.status || test.status || 'pending',
+        timestamp: test.lastRun.timestamp || test.completed_at || test.updated_at
+      } : (test.status && test.status !== 'pending') ? {
+        status: test.status,
+        timestamp: test.completed_at || test.updated_at
+      } : null
     }));
     
     return NextResponse.json(serializedTests);
