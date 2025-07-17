@@ -298,30 +298,6 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-zinc-700/50">
-        <div className="flex items-center gap-3">
-          <h3 className="text-white font-medium text-sm">Test Explorer</h3>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCreateTest}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-            title="Create New Test"
-          >
-            <FileText size={16} />
-          </button>
-          
-          <button
-            onClick={() => onTagEditorOpen && onTagEditorOpen()}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-            title="Manage Tags"
-          >
-            <Tag size={16} />
-          </button>
-        </div>
-      </div>
 
       {/* Search and Filters */}
       <div className="p-4 space-y-3 border-b border-zinc-700/50">
@@ -337,66 +313,115 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           />
         </div>
 
-        {/* Tag Filter */}
-        <div className="relative" ref={tagDropdownRef}>
-          <button
-            onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm hover:border-[var(--accent-color)] transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Tag size={14} className="text-gray-400" />
-              <span className="text-gray-400">
-                {selectedTagFilters.length === 0 
-                  ? 'Filter by tags...' 
-                  : `${selectedTagFilters.length} tag${selectedTagFilters.length === 1 ? '' : 's'} selected`
-                }
-              </span>
-            </div>
-            <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTagDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Dropdown */}
-          {isTagDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10">
-              <div className="p-2">
-                {/* Clear filters option */}
-                {selectedTagFilters.length > 0 && (
-                  <button
-                    onClick={clearTagFilters}
-                    className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-zinc-700 rounded"
-                  >
-                    Clear all filters
-                  </button>
-                )}
-                
-                {/* Tag options */}
-                {allTags.length > 0 ? (
-                  allTags.map(tag => (
-                    <button
-                      key={tag.name}
-                      onClick={() => toggleTagFilter(tag.name)}
-                      className="w-full text-left px-2 py-1 hover:bg-zinc-700 rounded flex items-center gap-2"
-                    >
-                      <div className="flex items-center gap-2 flex-1">
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        <span className="text-white text-sm">{tag.name}</span>
-                      </div>
-                      {selectedTagFilters.includes(tag.name) && (
-                        <div className="w-4 h-4 bg-[var(--accent-color)] rounded flex items-center justify-center">
-                          <span className="text-white text-xs">✓</span>
-                        </div>
-                      )}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-2 py-1 text-xs text-gray-400">No tags available</div>
-                )}
+        {/* Tag Filter and Controls Row */}
+        <div className="flex items-center gap-2">
+          {/* Tag Filter */}
+          <div className="relative flex-1" ref={tagDropdownRef}>
+            <button
+              onClick={() => setIsTagDropdownOpen(!isTagDropdownOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm hover:border-[var(--accent-color)] transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Tag size={14} className="text-gray-400" />
+                <span className="text-gray-400">
+                  {selectedTagFilters.length === 0 
+                    ? 'Filter by tags...' 
+                    : `${selectedTagFilters.length} tag${selectedTagFilters.length === 1 ? '' : 's'} selected`
+                  }
+                </span>
               </div>
+              <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTagDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown */}
+            {isTagDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10">
+                <div className="p-2">
+                  {/* Clear filters option */}
+                  {selectedTagFilters.length > 0 && (
+                    <button
+                      onClick={clearTagFilters}
+                      className="w-full text-left px-2 py-1 text-xs text-gray-400 hover:text-white hover:bg-zinc-700 rounded"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
+                  
+                  {/* Tag options */}
+                  {allTags.length > 0 ? (
+                    allTags.map(tag => (
+                      <button
+                        key={tag.name}
+                        onClick={() => toggleTagFilter(tag.name)}
+                        className="w-full text-left px-2 py-1 hover:bg-zinc-700 rounded flex items-center gap-2"
+                      >
+                        <div className="flex items-center gap-2 flex-1">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          <span className="text-white text-sm">{tag.name}</span>
+                        </div>
+                        {selectedTagFilters.includes(tag.name) && (
+                          <div className="w-4 h-4 bg-[var(--accent-color)] rounded flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-2 py-1 text-xs text-gray-400">No tags available</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Controls Group */}
+          <div className="flex items-center gap-2">
+            {/* Action Icons */}
+            <button
+              onClick={handleCreateTest}
+              className="p-1 text-gray-400 hover:text-white transition-colors"
+              title="Create New Test"
+            >
+              <FileText size={16} />
+            </button>
+            
+            <button
+              onClick={() => onTagEditorOpen && onTagEditorOpen()}
+              className="p-1 text-gray-400 hover:text-white transition-colors"
+              title="Manage Tags"
+            >
+              <Tag size={16} />
+            </button>
+            
+            {/* Check All Checkbox */}
+            <div
+              onClick={() => {
+                const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
+                if (allChecked) {
+                  setSelectedTests([]);
+                } else {
+                  setSelectedTests(filteredTests);
+                }
+              }}
+              className={`
+                w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
+                ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
+                  ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
+                  : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
+                }
+              `}
+              title="Select All Tests"
+            >
+              {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Selected tag filters display */}
@@ -420,34 +445,6 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
           </div>
         )}
 
-        {/* Test Controls Row */}
-        <div className="flex items-center justify-end gap-2 pr-2">
-          {/* Check All Checkbox */}
-          <div
-            onClick={() => {
-              const allChecked = filteredTests.length > 0 && selectedTests.length === filteredTests.length;
-              if (allChecked) {
-                setSelectedTests([]);
-              } else {
-                setSelectedTests(filteredTests);
-              }
-            }}
-            className={`
-              w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer
-              ${filteredTests.length > 0 && selectedTests.length === filteredTests.length
-                ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
-                : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
-              }
-            `}
-            title="Select All Tests"
-          >
-            {filteredTests.length > 0 && selectedTests.length === filteredTests.length && (
-              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            )}
-          </div>
-        </div>
       </div>
 
 
