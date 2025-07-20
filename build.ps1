@@ -25,21 +25,14 @@ if ($DevMode) {
     Write-Host "Using Windows build"
     Write-Host "- Frontend will be pre-built with 'npm run build'"
     Write-Host "- Python will run with optimized settings"
-    Write-Host "- Database will be cleared for fresh start"
 }
 
 if (-not $DevMode) {
-    # Clear database for production
-    Write-Host "Clearing database collections for production..."
-    if (Test-Path "db_data") {
-        try {
-            Remove-Item -Path "db_data" -Recurse -Force
-        } catch {
-            Write-Host "Note: Some database files may have restricted permissions - they will be overwritten on next run"
-        }
+    # Ensure database directory exists for production
+    if (-not (Test-Path "db_data")) {
+        New-Item -ItemType Directory -Path "db_data" | Out-Null
+        Write-Host "Created database directory"
     }
-    New-Item -ItemType Directory -Path "db_data" | Out-Null
-    Write-Host "Database cleared"
 
     # Build Next.js for production
     Write-Host "Building Next.js for production..."

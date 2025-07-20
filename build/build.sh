@@ -112,18 +112,12 @@ if [ "$MODE" = "dev" ]; then
 else
     echo "- Frontend will be pre-built with 'npm run build'"
     echo "- Python will run with optimized settings"
-    echo "- Database will be cleared for fresh start"
     
-    # Clear database for production
-    echo "Clearing database collections for production..."
-    if [ -d "db_data" ]; then
-        # Try to remove with regular permissions first
-        rm -rf db_data 2>/dev/null || {
-            echo "Note: Some database files may have restricted permissions - they will be overwritten on next run"
-        }
+    # Ensure database directory exists for production
+    if [ ! -d "db_data" ]; then
+        mkdir -p db_data
+        echo "Created database directory"
     fi
-    mkdir -p db_data
-    echo "Database cleared"
     
     # Build Next.js for production
     echo "Building Next.js for production..."
