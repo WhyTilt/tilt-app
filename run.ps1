@@ -67,11 +67,18 @@ if (-not $imageExists) {
         Write-Host "Development image not found. Building..."
         & ".\build.ps1" "dev"
     } else {
-        Write-Host "Production image not found. Building..."
-        & ".\build.ps1"
+        Write-Host "Production image not found. Pulling from Docker Hub..."
+        docker pull "whytilt/$IMAGE_NAME"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Pull failed! Falling back to local build..."
+            & ".\build.ps1"
+        } else {
+            # Tag the pulled image with our local name
+            docker tag "whytilt/$IMAGE_NAME" "$IMAGE_NAME"
+        }
     }
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Build failed!"
+        Write-Host "❌ Setup failed!"
         exit $LASTEXITCODE
     }
 }

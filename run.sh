@@ -69,6 +69,19 @@ fi
 DOCKER_ENV_VARS="-e DEV_MODE=$DEV_MODE"
 
 
+# Check if image exists locally, if not pull from Docker Hub
+if [ "$DEV_MODE" = "false" ]; then
+    if ! docker images -q "$IMAGE_NAME" > /dev/null 2>&1; then
+        echo "Production image not found. Pulling from Docker Hub..."
+        docker pull "whytilt/$IMAGE_NAME" || {
+            echo "❌ Pull failed! Please check your internet connection or build locally with: ./build/build.sh prod"
+            exit 1
+        }
+        # Tag the pulled image with our local name
+        docker tag "whytilt/$IMAGE_NAME" "$IMAGE_NAME"
+    fi
+fi
+
 # Create db_data directory if it doesn't exist
 mkdir -p ./db_data
 
