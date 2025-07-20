@@ -55,13 +55,38 @@ if [ -f ".env.local" ]; then
     export $(grep -v '^#' .env.local | xargs)
 fi
 
-# Determine which Docker image to use
-if [ "$DEV_MODE" = "true" ]; then
-    IMAGE_NAME="tilt-dev-nix:latest"
-    echo "Starting Tilt in development mode..."
+# Detect platform and determine which Docker image to use
+PLATFORM=$(uname -s)
+ARCH=$(uname -m)
+
+if [ "$PLATFORM" = "Darwin" ]; then
+    # Mac (Apple Silicon)
+    if [ "$DEV_MODE" = "true" ]; then
+        IMAGE_NAME="tilt-dev-arm64:latest"
+        echo "Starting Tilt in development mode (Mac ARM64)..."
+    else
+        IMAGE_NAME="tilt-app-arm64:latest"
+        echo "Starting Tilt in production mode (Mac ARM64)..."
+    fi
 else
-    IMAGE_NAME="tilt-app-nix:latest"
-    echo "Starting Tilt in production mode..."
+    # Linux
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+        if [ "$DEV_MODE" = "true" ]; then
+            IMAGE_NAME="tilt-dev-arm64:latest"
+            echo "Starting Tilt in development mode (Linux ARM64)..."
+        else
+            IMAGE_NAME="tilt-app-arm64:latest"
+            echo "Starting Tilt in production mode (Linux ARM64)..."
+        fi
+    else
+        if [ "$DEV_MODE" = "true" ]; then
+            IMAGE_NAME="tilt-dev-nix:latest"
+            echo "Starting Tilt in development mode (Linux x86_64)..."
+        else
+            IMAGE_NAME="tilt-app-nix:latest"
+            echo "Starting Tilt in production mode (Linux x86_64)..."
+        fi
+    fi
 fi
 
 
