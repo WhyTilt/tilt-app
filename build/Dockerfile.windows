@@ -205,4 +205,4 @@ ENV WIDTH=$WIDTH
 # Expose ports
 EXPOSE 3001 8501 6080 27017
 
-ENTRYPOINT [ "./image/entrypoint.sh" ]
+ENTRYPOINT [ "/home/tilt/image/entrypoint.sh" ]
