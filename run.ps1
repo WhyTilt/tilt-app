@@ -3,6 +3,71 @@
 # Error handling
 $ErrorActionPreference = "Stop"
 
+# Function to check if Docker Desktop is installed and running
+function Test-DockerDesktop {
+    # Check if Docker Desktop is installed
+    $dockerDesktopPath = Get-Command "Docker Desktop" -ErrorAction SilentlyContinue
+    if (-not $dockerDesktopPath) {
+        # Try alternative paths
+        $possiblePaths = @(
+            "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe",
+            "$env:LOCALAPPDATA\Docker\Docker Desktop.exe"
+        )
+        
+        $dockerDesktopPath = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+        
+        if (-not $dockerDesktopPath) {
+            Write-Host "❌ Docker Desktop is not installed!" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "To run Tilt, you need Docker Desktop installed:" -ForegroundColor Yellow
+            Write-Host "1. Download Docker Desktop from: https://www.docker.com/products/docker-desktop/" -ForegroundColor Yellow
+            Write-Host "2. Install and restart your computer" -ForegroundColor Yellow
+            Write-Host "3. Start Docker Desktop and complete the setup" -ForegroundColor Yellow
+            Write-Host "4. Run this script again" -ForegroundColor Yellow
+            exit 1
+        }
+    }
+    
+    # Check if Docker daemon is running
+    try {
+        docker version | Out-Null
+        return $true
+    }
+    catch {
+        # Docker Desktop installed but not running
+        Write-Host "⚠️  Docker Desktop is installed but not running" -ForegroundColor Yellow
+        Write-Host "Starting Docker Desktop..."
+        
+        if ($dockerDesktopPath -is [string]) {
+            Start-Process -FilePath $dockerDesktopPath -WindowStyle Hidden
+        } else {
+            Start-Process -FilePath "Docker Desktop" -WindowStyle Hidden
+        }
+        
+        # Wait for Docker to start
+        Write-Host "Waiting for Docker Desktop to start..."
+        for ($i = 1; $i -le 60; $i++) {
+            try {
+                docker version | Out-Null
+                Write-Host "✅ Docker Desktop is now running!" -ForegroundColor Green
+                return $true
+            }
+            catch {
+                Write-Host "." -NoNewline
+                Start-Sleep -Seconds 2
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "❌ Docker Desktop failed to start within 2 minutes" -ForegroundColor Red
+        Write-Host "Please start Docker Desktop manually and try again" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
+# Check Docker Desktop before proceeding
+Test-DockerDesktop
+
 # Parse command line arguments
 $DevMode = $args[0] -eq "dev"
 
