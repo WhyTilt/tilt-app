@@ -1,6 +1,6 @@
 {
   "name": "tilt-frontend",
-  "version": "fe-0.0.62",
+  "version": "0.0.62",
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",

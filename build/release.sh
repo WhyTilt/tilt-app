@@ -9,11 +9,11 @@ show_usage() {
     echo "Release script for Tilt - builds and pushes Docker images to DockerHub"
     echo ""
     echo "Arguments:"
-    echo "  version   Version tag (e.g., v1.0.0, v1.2.3)"
+    echo "  version   Version tag (e.g., 1.0.0, 1.2.3)"
     echo "            If not provided, will use latest git tag"
     echo ""
     echo "Examples:"
-    echo "  $0 v1.0.0        # Release specific version"
+    echo "  $0 1.0.0         # Release specific version"
     echo "  $0               # Release using latest git tag"
     echo ""
     echo "The script will:"
@@ -34,7 +34,7 @@ if [ $# -eq 0 ]; then
     # Get latest version from git tag and auto-increment
     LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
     if [ -z "$LATEST_TAG" ]; then
-        echo "❌ No git tags found and no version specified"
+        echo "Error: No git tags found and no version specified"
         echo "Please create a git tag or specify a version"
         show_usage
         exit 1
@@ -46,16 +46,16 @@ if [ $# -eq 0 ]; then
         MINOR=${BASH_REMATCH[2]}
         PATCH=${BASH_REMATCH[3]}
         NEW_PATCH=$((PATCH + 1))
-        VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+        VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
         echo "Latest git tag: $LATEST_TAG"
         echo "Auto-incrementing to: $VERSION"
         
-        # Create and push the new tag
-        git tag -a "$VERSION" -m "Release $VERSION: Auto-incremented patch version"
-        git push origin "$VERSION"
-        echo "✅ Created and pushed new tag: $VERSION"
+        # Create and push the new tag with v prefix for git
+        git tag -a "v$VERSION" -m "Release v$VERSION: Auto-incremented patch version"
+        git push origin "v$VERSION"
+        echo "Created and pushed new tag: v$VERSION"
     else
-        echo "❌ Latest tag '$LATEST_TAG' doesn't follow semantic versioning"
+        echo "Error: Latest tag '$LATEST_TAG' doesn't follow semantic versioning"
         echo "Please use format vX.Y.Z"
         exit 1
     fi
@@ -71,8 +71,8 @@ else
 fi
 
 # Validate version format
-if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "⚠️  Warning: Version '$VERSION' doesn't follow semantic versioning (vX.Y.Z)"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Warning: Version '$VERSION' doesn't follow semantic versioning (X.Y.Z)"
     read -p "Continue anyway? [y/N]: " CONTINUE
     if [ "$CONTINUE" != "y" ] && [ "$CONTINUE" != "Y" ]; then
         echo "Aborted"
@@ -112,7 +112,7 @@ case "$PLATFORM" in
         echo "Building Mac ARM64 image (Apple Silicon)"
         ;;
     *)
-        echo "❌ Unsupported platform: $PLATFORM"
+        echo "Error: Unsupported platform: $PLATFORM"
         echo "This script supports Linux and macOS only."
         echo "For Windows, use release.bat"
         exit 1
@@ -125,20 +125,20 @@ echo ""
 
 # Check if Docker is logged in
 if ! docker info >/dev/null 2>&1; then
-    echo "❌ Docker is not running or accessible"
+    echo "Error: Docker is not running or accessible"
     exit 1
 fi
 
 # Check DockerHub authentication
 if ! docker system info | grep -q "Username:"; then
-    echo "❌ Not logged in to DockerHub"
+    echo "Error: Not logged in to DockerHub"
     echo "Please run: docker login"
     echo "Or if you have a token saved:"
     echo "  source .env.local && echo \$DOCKER_TOKEN | docker login -u \$DOCKER_USERNAME --password-stdin"
     exit 1
 fi
 
-echo "✅ Docker authentication verified"
+echo "Docker authentication verified"
 echo ""
 
 # Confirm release
@@ -168,19 +168,19 @@ esac
 
 echo "Checking for existing built image: $LOCAL_IMAGE"
 if ! docker image inspect "$LOCAL_IMAGE" >/dev/null 2>&1; then
-    echo "❌ Image $LOCAL_IMAGE not found!"
+    echo "Error: Image $LOCAL_IMAGE not found!"
     echo "Please run build.sh first to build the image"
     exit 1
 fi
 
-echo "✅ Found existing image: $LOCAL_IMAGE"
+echo "Found existing image: $LOCAL_IMAGE"
 echo "Tagging for release..."
 
 # Tag the existing image with release tags
 docker tag "$LOCAL_IMAGE" "$REPO_NAME:$VERSION"
 docker tag "$LOCAL_IMAGE" "$REPO_NAME:latest"
 
-echo "✅ Tagged successfully!"
+echo "Tagged successfully!"
 
 # Push to DockerHub
 echo ""
@@ -192,11 +192,11 @@ echo "- $REPO_NAME:latest"
 docker push $REPO_NAME:latest
 
 echo ""
-echo "✅ Release completed successfully!"
+echo "Release completed successfully!"
 echo ""
 echo "Released images:"
-echo "  🐳 $REPO_NAME:$VERSION"
-echo "  🐳 $REPO_NAME:latest"
+echo "  $REPO_NAME:$VERSION"
+echo "  $REPO_NAME:latest"
 echo ""
 echo "You can now run:"
 echo "  docker run -p 6080:6080 -p 3001:3001 $REPO_NAME:$VERSION"

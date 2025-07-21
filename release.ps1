@@ -15,11 +15,11 @@ function Show-Usage {
     Write-Host "Release script for Tilt - builds and pushes Docker images to DockerHub"
     Write-Host ""
     Write-Host "Arguments:"
-    Write-Host "  version   Version tag (e.g., v0.0.63, v0.0.64)"
+    Write-Host "  version   Version tag (e.g., 0.0.63, 0.0.64)"
     Write-Host "            If not provided, will use latest git tag"
     Write-Host ""
     Write-Host "Examples:"
-    Write-Host "  .\release.ps1 v0.0.64    # Release specific version"
+    Write-Host "  .\release.ps1 0.0.64    # Release specific version"
     Write-Host "  .\release.ps1            # Release using latest git tag"
     Write-Host ""
     Write-Host "The script will:"
@@ -33,13 +33,14 @@ if ([string]::IsNullOrEmpty($Version)) {
     # Use latest existing tag - DON'T auto-increment
     $LATEST_TAG = git describe --tags --abbrev=0 2>$null
     if ([string]::IsNullOrEmpty($LATEST_TAG)) {
-        Write-Host "❌ No git tags found and no version specified"
+        Write-Host "Error: No git tags found and no version specified"
         Write-Host "Please create a git tag or specify a version"
         Show-Usage
         exit 1
     }
     
-    $Version = $LATEST_TAG
+    # Remove 'v' prefix if present for consistent format
+    $Version = $LATEST_TAG -replace '^v', ''
     Write-Host "Using existing tag: $Version"
 } elseif ($Version -eq "-h" -or $Version -eq "--help" -or $Version -eq "help") {
     Show-Usage
@@ -47,8 +48,8 @@ if ([string]::IsNullOrEmpty($Version)) {
 }
 
 # Validate version format
-if ($Version -notmatch '^v\d+\.\d+\.\d+$') {
-    Write-Host "⚠️  Warning: Version '$Version' doesn't follow semantic versioning (vX.Y.Z)"
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    Write-Host "Warning: Version '$Version' doesn't follow semantic versioning (X.Y.Z)"
     $CONTINUE = Read-Host "Continue anyway? [y/N]"
     if ($CONTINUE -ne "y" -and $CONTINUE -ne "Y") {
         Write-Host "Aborted"
@@ -83,7 +84,7 @@ Write-Host ""
 try {
     docker info | Out-Null
 } catch {
-    Write-Host "❌ Docker is not running or accessible"
+    Write-Host "Error: Docker is not running or accessible"
     exit 1
 }
 
@@ -103,12 +104,12 @@ if (-not $dockerInfo.Contains("Username:")) {
         Write-Host "Username: $env:DOCKER_USERNAME"
         $env:DOCKER_TOKEN | docker login -u $env:DOCKER_USERNAME --password-stdin
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Auto-login failed"
+            Write-Host "Error: Auto-login failed"
             exit 1
         }
-        Write-Host "✅ Auto-login successful"
+        Write-Host "Auto-login successful"
     } else {
-        Write-Host "❌ Not logged in to DockerHub and no credentials in .env.local"
+        Write-Host "Error: Not logged in to DockerHub and no credentials in .env.local"
         Write-Host "DOCKER_USERNAME: $env:DOCKER_USERNAME"
         Write-Host "DOCKER_TOKEN exists: $([bool]$env:DOCKER_TOKEN)"
         Write-Host "Please run: docker login"
@@ -119,7 +120,7 @@ if (-not $dockerInfo.Contains("Username:")) {
     Write-Host "Already logged in to DockerHub"
 }
 
-Write-Host "✅ Docker authentication verified"
+Write-Host "Docker authentication verified"
 Write-Host ""
 
 # Confirm release
@@ -137,23 +138,23 @@ if ($CONFIRM -ne "y" -and $CONFIRM -ne "Y") {
 Write-Host "Checking for existing built image: $LOCAL_IMAGE"
 $imageExists = docker image inspect "$LOCAL_IMAGE" 2>$null
 if (-not $imageExists) {
-    Write-Host "❌ Image $LOCAL_IMAGE not found!"
+    Write-Host "Error: Image $LOCAL_IMAGE not found!"
     Write-Host "Building image first..."
     & ".\build.ps1"
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Build failed!"
+        Write-Host "Error: Build failed!"
         exit 1
     }
 }
 
-Write-Host "✅ Found existing image: $LOCAL_IMAGE"
+Write-Host "Found existing image: $LOCAL_IMAGE"
 Write-Host "Tagging for release..."
 
 # Tag the existing image with release tags
 docker tag "$LOCAL_IMAGE" "$REPO_NAME`:$Version"
 docker tag "$LOCAL_IMAGE" "$REPO_NAME`:latest"
 
-Write-Host "✅ Tagged successfully!"
+Write-Host "Tagged successfully!"
 
 # Push to DockerHub
 Write-Host ""
@@ -165,11 +166,11 @@ Write-Host "- $REPO_NAME`:latest"
 docker push "$REPO_NAME`:latest"
 
 Write-Host ""
-Write-Host "✅ Release completed successfully!"
+Write-Host "Release completed successfully!"
 Write-Host ""
 Write-Host "Released images:"
-Write-Host "  🐳 $REPO_NAME`:$Version"
-Write-Host "  🐳 $REPO_NAME`:latest"
+Write-Host "  $REPO_NAME`:$Version"
+Write-Host "  $REPO_NAME`:latest"
 Write-Host ""
 Write-Host "You can now run:"
 Write-Host "  docker run -p 6080:6080 -p 3001:3001 $REPO_NAME`:$Version"
