@@ -25,7 +25,7 @@
    - Backend API: http://localhost:8000
    - VNC Web Interface: http://localhost:6080
 
-### Linux Setup
+### Mac/Linux Setup
 
 1. **Clone the repository**
    ```bash
