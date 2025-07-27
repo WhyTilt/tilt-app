@@ -72,6 +72,31 @@ export function TestRunnerProvider({ children }: TestRunnerProviderProps) {
   const [errorType, setErrorType] = useState<'credit' | 'general' | null>(null);
   const [isExecutionPanelOpen, setIsExecutionPanelOpen] = useState(false);
 
+  const terminateAgents = useCallback(async () => {
+    try {
+      console.log('Terminating all agent processes...');
+      
+      // Call API to terminate all running agents
+      const response = await fetch(`${API_BASE_URL}/terminate-agents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Agent termination result:', result.message);
+      } else {
+        console.warn('Agent termination failed:', response.status);
+      }
+      
+      // Wait for termination to complete
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+    } catch (error) {
+      console.error('Error during agent termination:', error);
+    }
+  }, []);
+
   const cleanupBrowserOnly = useCallback(async () => {
     try {
       console.log('Cleaning up browser state...');
@@ -98,12 +123,18 @@ export function TestRunnerProvider({ children }: TestRunnerProviderProps) {
   }, []);
 
   const startExecution = useCallback((test: Test) => {
+    // Immediately update UI state for responsiveness
     setExecutingTest(test);
     setRunState('running');
     setIsExecutionPanelOpen(true);
     setExecutionData({});
     setErrorType(null);
-  }, []);
+    
+    // Terminate any existing agents in background (non-blocking)
+    terminateAgents().catch(error => {
+      console.warn('Agent termination failed, but continuing with test execution:', error);
+    });
+  }, [terminateAgents]);
 
   const setExecutionError = useCallback(async (errorType: 'credit' | 'general') => {
     setRunState('error');
@@ -161,65 +192,113 @@ export function TestRunnerProvider({ children }: TestRunnerProviderProps) {
     setExecutionData({});
     setErrorType(null);
     
-    // Cleanup browser state AFTER execution stops (like original implementation)
+    // Terminate all agents and cleanup browser state
     try {
+      await terminateAgents();
+      console.log('Agent termination completed after stopping execution');
       await cleanupBrowserOnly();
       console.log('Browser cleanup completed after stopping execution');
     } catch (cleanupError) {
       console.error('Cleanup after stop failed:', cleanupError);
     }
-  }, [cleanupBrowserOnly]);
+  }, [terminateAgents, cleanupBrowserOnly]);
 
   const completeExecution = useCallback(async () => {
     setRunState('completed');
     
-    // Save execution artifacts if we have a test
-    if (executingTest && (executionData.thoughts?.length || executionData.screenshots?.length)) {
-      try {
-        // Prepare artifacts array combining thoughts and screenshots
-        const maxLength = Math.max(
-          executionData.thoughts?.length || 0,
-          executionData.screenshots?.length || 0
-        );
-        
-        const artifacts = [];
-        for (let i = 0; i < maxLength; i++) {
-          artifacts.push({
-            timestamp: new Date().toISOString(),
-            thought: executionData.thoughts?.[i],
-            screenshotPath: executionData.screenshots?.[i]
-          });
-        }
+    // Use a function to access current execution data
+    setExecutionData(currentExecutionData => {
+      // Send debug info to server logs
+      fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'info',
+          message: '🔍 completeExecution called',
+          data: {
+            executingTest: !!executingTest,
+            executionData: currentExecutionData,
+            thoughtsLength: currentExecutionData.thoughts?.length,
+            screenshotsLength: currentExecutionData.screenshots?.length
+          }
+        })
+      }).catch(() => {});
+      
+      // Save execution artifacts if we have a test
+      if (executingTest && (currentExecutionData.thoughts?.length || currentExecutionData.screenshots?.length)) {
+        (async () => {
+          try {
+            // Prepare artifacts array combining thoughts and screenshots
+            const maxLength = Math.max(
+              currentExecutionData.thoughts?.length || 0,
+              currentExecutionData.screenshots?.length || 0
+            );
+            
+            const artifacts = [];
+            for (let i = 0; i < maxLength; i++) {
+              artifacts.push({
+                timestamp: new Date().toISOString(),
+                thought: currentExecutionData.thoughts?.[i],
+                screenshotPath: currentExecutionData.screenshots?.[i]
+              });
+            }
 
-        // Save to MongoDB
-        await fetch(`/api/v2/tests/${executingTest.id}/execution`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            artifacts,
-            status: 'completed'
-          })
-        });
+            // Save to MongoDB
+            await fetch(`/api/v2/tests/${executingTest.id}/execution`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                artifacts,
+                status: 'completed'
+              })
+            });
         
-        console.log('Execution artifacts saved successfully');
-      } catch (error) {
-        console.error('Failed to save execution artifacts:', error);
+            console.log('Execution artifacts saved successfully');
+          } catch (error) {
+            console.error('Failed to save execution artifacts:', error);
+          }
+        })();
       }
-    }
+      
+      // Return the current execution data (no changes)
+      return currentExecutionData;
+    });
     
     // Keep panel open and test data for navigation
     
-    // Cleanup browser state AFTER execution completes (like original implementation)
+    // Terminate agents and cleanup browser state AFTER execution completes
     try {
+      await terminateAgents();
+      console.log('Agent termination completed after test completion');
       await cleanupBrowserOnly();
       console.log('Browser cleanup completed after test completion');
     } catch (cleanupError) {
       console.error('Cleanup after completion failed:', cleanupError);
     }
-  }, [cleanupBrowserOnly, executingTest, executionData]);
+  }, [terminateAgents, cleanupBrowserOnly, executingTest]);
 
   const updateExecutionData = useCallback((data: ExecutionData) => {
-    setExecutionData(prevData => ({ ...prevData, ...data }));
+    setExecutionData(prevData => {
+      const newData = { ...prevData, ...data };
+      // Debug log to see what's being updated
+      fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'info',
+          message: '🔍 updateExecutionData called',
+          data: {
+            incoming: data,
+            prevData,
+            newData,
+            thoughtsLength: newData.thoughts?.length,
+            screenshotsLength: newData.screenshots?.length
+          }
+        })
+      }).catch(() => {}); // Ignore errors
+      
+      return newData;
+    });
   }, []);
 
   const setExecutionPanelOpen = useCallback((isOpen: boolean) => {

@@ -158,7 +158,7 @@ case "$PLATFORM" in
         if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
             LOCAL_IMAGE="tilt-app-arm64:latest"
         else
-            LOCAL_IMAGE="tilt-app-nix:latest"
+            LOCAL_IMAGE="tilt-app-linux:latest"
         fi
         ;;
     "Darwin")

@@ -11,7 +11,8 @@ export function TestRunner() {
     executingTest, 
     updateExecutionData,
     stopExecution,
-    completeExecution 
+    completeExecution,
+    setExecutionError 
   } = useTestRunner();
   
   const { 
@@ -20,6 +21,19 @@ export function TestRunner() {
     setMessages, 
     addMessage
   } = useApp();
+
+  // Helper function to log to server console
+  const debugLog = async (level: string, message: string, data?: any) => {
+    try {
+      await fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level, message, data })
+      });
+    } catch (error) {
+      console.error('Failed to send debug log:', error);
+    }
+  };
   
   const streamingMessageRef = useRef('');
   const currentThoughtsRef = useRef<string[]>([]);
@@ -36,7 +50,7 @@ export function TestRunner() {
   const executeTestWithAgent = async () => {
     if (!executingTest) return;
     
-    console.log('🔥 TestRunner: Starting agent execution for test:', executingTest.name);
+    // Starting agent execution
     
     // Listen for user messages to inject into the conversation
     const handleUserMessage = (event: CustomEvent) => {
@@ -44,7 +58,7 @@ export function TestRunner() {
         role: 'user' as const,
         content: event.detail.message
       };
-      console.log('🔥 Injecting user message into conversation:', event.detail.message);
+      // Injecting user message into conversation
       addMessage(userMessage);
     };
     
@@ -60,16 +74,29 @@ export function TestRunner() {
     // Clear messages before starting
     setMessages([]);
     
+    // Initialize test run as 'running' in database
+    try {
+      await fetch(`/api/v2/tests/${executingTest.id}/execution`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artifacts: [],
+          status: 'running'
+        })
+      });
+      // Initialized test run as running
+    } catch (error) {
+      console.error('🔥 REAL-TIME: Failed to initialize test run:', error);
+    }
+    
     // Convert test steps to instructions
-    console.log('🔥 Test steps raw:', executingTest.steps);
-    console.log('🔥 Test steps type:', typeof executingTest.steps);
-    console.log('🔥 Test steps length:', executingTest.steps?.length);
+    // Processing test steps
     
     const instructions = executingTest.steps.filter(step => step.trim() !== '');
-    console.log('🔥 Filtered instructions:', instructions);
+    // Filtered instructions processed
     
     if (instructions.length === 0) {
-      console.log('No instructions to execute - test has no steps defined');
+      // No instructions to execute - test has no steps defined
       await stopExecution();
       return;
     }
@@ -90,48 +117,44 @@ ${instructions.map((instruction, i) => `${i + 1}. ${instruction}`).join('\n')}`
     const messagesForApi = [userMessage];
 
     // Create system prompt exactly like working code
-    const taskSystemPrompt = `
+    const testSystemPrompt = `
 ${config.custom_system_prompt || ''}
 
-TASK ID: ${executingTest.id}
-TASK NAME: ${executingTest.name}
+TEST ID: ${executingTest.id}
+TEST NAME: ${executingTest.name}
 
 You are executing a test with the following steps:
 ${instructions.map((instruction, i) => `${i + 1}. ${instruction}`).join('\n')}
 
 Execute each step carefully and provide detailed feedback about what you're doing.
 
-When you have completed all steps, use the mongodb_reporter tool to save the test result.
+When you have completed all steps, use the mongodb_reporter tool to save the test result with test_id="${executingTest.id}".
 `;
 
-    console.log('🔥 STARTING API CALL with instructions:', instructions);
-    console.log('🔥 STARTING API CALL with system prompt:', taskSystemPrompt);
-    console.log('🔥 CHECKING apiClient:', apiClient);
-    console.log('🔥 CHECKING apiClient.sendChatStream:', apiClient.sendChatStream);
-    console.log('🔥 TYPEOF apiClient.sendChatStream:', typeof apiClient.sendChatStream);
-    console.log('🔥 CONFIG:', config);
-    console.log('🔥 API KEY EXISTS:', !!config.api_key);
-    console.log('🔥 CALLING apiClient.sendChatStream...');
+    // Starting API call with configuration
     
     try {
       await apiClient.sendChatStream({
         messages: messagesForApi,
-        system_prompt_suffix: taskSystemPrompt,
+        system_prompt_suffix: testSystemPrompt,
         only_n_most_recent_images: config.only_n_most_recent_images || 5,
         tool_version: config.tool_version || 'computer_20241022',
         max_tokens: config.output_tokens || 2000,
         thinking_budget: config.thinking ? config.thinking_budget : undefined,
         token_efficient_tools_beta: config.token_efficient_tools_beta,
+        test_id: executingTest.id,
       }, (event) => {
-        console.log('🔥 Received event:', event.type, event);
+        // No console logging - use debug API instead
         
         switch (event.type) {
           case 'text':
+            debugLog('info', '🔍 TEXT event received', { text: event.text });
             streamingMessageRef.current += event.text || '';
             
             // Add to thoughts
             if (event.text?.trim()) {
               currentThoughtsRef.current = [...currentThoughtsRef.current, event.text];
+              debugLog('info', '🔍 Updated thoughts count', { count: currentThoughtsRef.current.length });
               updateExecutionData({ 
                 thoughts: [...currentThoughtsRef.current],
                 screenshot: currentScreenshotRef.current || undefined,
@@ -214,25 +237,76 @@ When you have completed all steps, use the mongodb_reporter tool to save the tes
               screenshots: [...currentScreenshotsRef.current],
               actions: [...currentActionsRef.current]
             });
+            
+            // SAVE ACTION ARTIFACTS IN REAL-TIME immediately when tool is used
+            (async () => {
+              try {
+                const artifact = {
+                  timestamp: new Date().toISOString(),
+                  thought: actionDescription,
+                  screenshotPath: currentScreenshotRef.current || undefined
+                };
+                
+                await fetch(`/api/v2/tests/${executingTest.id}/execution`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    artifacts: [artifact],
+                    status: 'running'
+                  })
+                });
+                
+                // Action artifact saved immediately
+              } catch (error) {
+                console.error('🔥 REAL-TIME: Failed to save action artifact:', error);
+              }
+            })();
             break;
             
           case 'tool_result':
+            debugLog('info', '🔍 TOOL_RESULT event received', { hasImage: !!event.base64_image });
             // Handle tool results, especially screenshots
             if (event.base64_image) {
+              debugLog('info', '🔍 Found screenshot in tool result');
               const screenshotData = `data:image/png;base64,${event.base64_image}`;
               currentScreenshotRef.current = screenshotData;
               currentScreenshotsRef.current = [...currentScreenshotsRef.current, screenshotData];
+              debugLog('info', '🔍 Updated screenshots count', { count: currentScreenshotsRef.current.length });
               updateExecutionData({ 
                 screenshot: screenshotData,
                 screenshots: [...currentScreenshotsRef.current],
                 thoughts: [...currentThoughtsRef.current],
                 actions: [...currentActionsRef.current]
               });
+              
+              // SAVE ARTIFACTS IN REAL-TIME immediately when we get a screenshot
+              (async () => {
+                try {
+                  const artifact = {
+                    timestamp: new Date().toISOString(),
+                    thought: currentThoughtsRef.current[currentThoughtsRef.current.length - 1] || 'Screenshot taken',
+                    screenshotPath: screenshotData
+                  };
+                  
+                  await fetch(`/api/v2/tests/${executingTest.id}/execution`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      artifacts: [artifact],
+                      status: 'running'
+                    })
+                  });
+                  
+                  // Screenshot artifact saved immediately
+                } catch (error) {
+                  console.error('🔥 REAL-TIME: Failed to save screenshot artifact:', error);
+                }
+              })();
             }
             break;
             
           case 'done':
-            console.log('🔥 Agent execution completed');
+            // Agent execution completed
             
             // Cleanup event listener
             window.removeEventListener('userMessage', handleUserMessage as EventListener);
@@ -245,8 +319,10 @@ When you have completed all steps, use the mongodb_reporter tool to save the tes
               });
             }
             
-            // Mark as completed but keep panel open for navigation
-            completeExecution();
+            // Delay completion to allow final events to be processed
+            setTimeout(() => {
+              completeExecution();
+            }, 2000); // Wait 2 seconds for any remaining events
             break;
             
           case 'error':

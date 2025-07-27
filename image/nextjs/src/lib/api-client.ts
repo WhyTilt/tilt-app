@@ -15,6 +15,7 @@ export interface ChatRequest {
   max_tokens?: number;
   thinking_budget?: number;
   token_efficient_tools_beta?: boolean;
+  test_id?: string;
 }
 
 export interface ChatResponse {

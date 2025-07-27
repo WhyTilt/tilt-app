@@ -80,10 +80,10 @@ else
         fi
     else
         if [ "$DEV_MODE" = "true" ]; then
-            IMAGE_NAME="tilt-dev-nix:latest"
+            IMAGE_NAME="tilt-dev-linux:latest"
             echo "Starting Tilt in development mode (Linux x86_64)..."
         else
-            IMAGE_NAME="tilt-app-nix:latest"
+            IMAGE_NAME="tilt-app-linux:latest"
             echo "Starting Tilt in production mode (Linux x86_64)..."
         fi
     fi
@@ -113,8 +113,13 @@ mkdir -p ./db_data
 # Stop and remove any existing Tilt containers
 echo "Stopping any existing Tilt containers..."
 # Stop all containers from tilt images
-docker ps -q --filter "ancestor=tilt-dev-nix" --filter "ancestor=tilt-app-nix" | xargs -r docker stop
-docker ps -aq --filter "ancestor=tilt-dev-nix" --filter "ancestor=tilt-app-nix" | xargs -r docker rm
+# Only filter by images that actually exist to avoid docker trying to pull them
+for img in tilt-dev-linux tilt-app-linux; do
+    if docker images -q "$img" > /dev/null 2>&1; then
+        docker ps -q --filter "ancestor=$img" | xargs -r docker stop
+        docker ps -aq --filter "ancestor=$img" | xargs -r docker rm
+    fi
+done
 # Also clean up any containers that might be using our ports
 docker ps -q | xargs -r -I {} sh -c 'docker port {} 2>/dev/null | grep -q ":3001\|:8000\|:5900\|:6080" && docker stop {} || true'
 

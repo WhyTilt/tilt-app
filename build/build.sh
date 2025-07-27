@@ -69,9 +69,9 @@ case "$PLATFORM" in
             echo "Using ARM64 Linux build"
         else
             if [ "$MODE" = "dev" ]; then
-                IMAGE_TAG="tilt-dev-nix"
+                IMAGE_TAG="tilt-dev-linux"
             else
-                IMAGE_TAG="tilt-app-nix"
+                IMAGE_TAG="tilt-app-linux"
             fi
             DOCKERFILE="Dockerfile.linux"
             PLATFORM_ARG=""

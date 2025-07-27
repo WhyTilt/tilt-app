@@ -15,7 +15,7 @@ import {
   hasVariables 
 } from './utils/variable-utils';
 import { runAllLogger } from './utils/run-all-logger';
-import { TaskExecutionReportModal } from '../../modals/task-execution-report';
+import { TestExecutionReportModal } from '../../modals/test-execution-report';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -1698,10 +1698,10 @@ export function TaskRunnerPanel({ onScreenshotAdded, onSubmit, onTaskStart, onTa
         isRunningAll={isBatchRun}
       />
       
-      {/* Task Execution Report Modal */}
+      {/* Test Execution Report Modal */}
       {selectedTaskReport && (
-        <TaskExecutionReportModal
-          task={selectedTaskReport as any}
+        <TestExecutionReportModal
+          test={selectedTaskReport as any}
           isOpen={!!selectedTaskReport}
           onClose={() => setSelectedTaskReport(null)}
         />

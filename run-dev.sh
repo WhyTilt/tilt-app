@@ -18,7 +18,7 @@ case "$PLATFORM" in
             IMAGE_TAG="tilt-dev-arm64"
             echo "Using ARM64 Linux image"
         else
-            IMAGE_TAG="tilt-dev-nix"
+            IMAGE_TAG="tilt-dev-linux"
             echo "Using x86_64 Linux image"
         fi
         ;;

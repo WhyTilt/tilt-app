@@ -103,6 +103,7 @@ async def chat_completion_stream(request: ChatRequest):
             async def run_sampling_loop():
                 try:
                     print("Starting sampling_loop execution")
+                    
                     result_messages = await sampling_loop(
                         system_prompt_suffix=request.system_prompt_suffix or "",
                         model=model,
@@ -591,9 +592,86 @@ async def update_task(task_id: str, request_data: dict):
     except Exception as e:
         return {"error": f"Failed to update task: {str(e)}"}
 
+@router.post("/terminate-agents")
+async def terminate_agents():
+    """Terminate all running agent processes to prevent multiple concurrent executions"""
+    try:
+        import subprocess
+        import signal
+        import os
+        
+        termination_results = []
+        
+        # Kill all Python processes that might be running agent loops
+        try:
+            result = subprocess.run(
+                ["pkill", "-f", "loop.py"], 
+                capture_output=True, 
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                termination_results.append("Agent loop processes terminated")
+        except Exception:
+            pass
+            
+        # Kill all Python processes running with anthropic tools
+        try:
+            result = subprocess.run(
+                ["pkill", "-f", "anthropic"], 
+                capture_output=True, 
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                termination_results.append("Anthropic tool processes terminated")
+        except Exception:
+            pass
+            
+        # Kill any remaining Python processes that might be agents
+        try:
+            result = subprocess.run(
+                ["pkill", "-f", "computer_use"], 
+                capture_output=True, 
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                termination_results.append("Computer use processes terminated")
+        except Exception:
+            pass
+            
+        # Force kill any stuck processes
+        try:
+            result = subprocess.run(
+                ["pkill", "-9", "-f", "loop.py"], 
+                capture_output=True, 
+                text=True,
+                timeout=5
+            )
+            termination_results.append("Force killed any remaining agent processes")
+        except Exception:
+            pass
+        
+        # Give processes time to terminate
+        import time
+        time.sleep(2)
+        
+        return {
+            "success": True,
+            "message": "Agent termination completed",
+            "details": termination_results
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Agent termination failed: {str(e)}"
+        }
+
 @router.post("/cleanup-browser")
 async def cleanup_browser():
-    """Clean up browser processes and state between tasks"""
+    """Clean up browser processes and state between tests"""
     try:
         import subprocess
         import time

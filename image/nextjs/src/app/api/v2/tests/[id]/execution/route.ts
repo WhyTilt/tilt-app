@@ -6,7 +6,7 @@ import { existsSync } from 'fs';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DATABASE_NAME = 'tilt';
-const SCREENSHOTS_DIR = '/tmp/tilt-screenshots';
+const SCREENSHOTS_DIR = '/home/tilt/image/nextjs/public/screenshots';
 
 let client: MongoClient;
 
@@ -80,20 +80,66 @@ export async function PUT(
       })
     );
 
-    // Update test with last run artifacts
-    await collection.updateOne(
-      { _id: new ObjectId(params.id) },
-      {
-        $set: {
-          lastRun: {
-            timestamp: new Date().toISOString(),
-            status,
-            artifacts: processedArtifacts
-          },
-          updated_at: new Date().toISOString()
+    const test = await collection.findOne({ _id: new ObjectId(params.id) });
+    
+    if (status === 'running' && test?.lastRun?.status === 'running') {
+      // REAL-TIME UPDATE: Append new artifacts to existing running test
+      const existingArtifacts = test.lastRun.artifacts || [];
+      const updatedArtifacts = [...existingArtifacts, ...processedArtifacts];
+      
+      await collection.updateOne(
+        { _id: new ObjectId(params.id) },
+        {
+          $set: {
+            'lastRun.artifacts': updatedArtifacts,
+            'lastRun.timestamp': new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
         }
+      );
+      
+      console.log(`🔥 REAL-TIME: Appended ${processedArtifacts.length} artifacts to running test ${params.id}`);
+    } else {
+      // NEW TEST RUN or COMPLETION: Create new history entry
+      const historyEntry = {
+        id: new ObjectId().toString(),
+        timestamp: new Date().toISOString(),
+        status,
+        artifacts: processedArtifacts
+      };
+
+      if (status === 'running') {
+        // Starting new test run
+        await collection.updateOne(
+          { _id: new ObjectId(params.id) },
+          {
+            $set: {
+              lastRun: historyEntry,
+              updated_at: new Date().toISOString()
+            }
+          }
+        );
+        console.log(`🔥 REAL-TIME: Started new test run ${params.id}`);
+      } else {
+        // Test completed or errored - add to history
+        await collection.updateOne(
+          { _id: new ObjectId(params.id) },
+          {
+            $set: {
+              lastRun: historyEntry,
+              updated_at: new Date().toISOString()
+            },
+            $push: {
+              history: {
+                $each: [historyEntry],
+                $slice: -50 // Keep only last 50 runs
+              } as any
+            }
+          }
+        );
+        console.log(`🔥 REAL-TIME: Completed test run ${params.id} with status ${status}`);
       }
-    );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -121,30 +167,21 @@ export async function GET(
       return NextResponse.json({ artifacts: [], status: null });
     }
 
-    // Convert screenshot file paths to base64 data URLs for frontend
-    const artifactsWithImages = await Promise.all(
-      test.lastRun.artifacts.map(async (artifact: ExecutionArtifact) => {
-        if (artifact.screenshotPath && existsSync(artifact.screenshotPath)) {
-          try {
-            const imageBuffer = await import('fs').then(fs => 
-              fs.promises.readFile(artifact.screenshotPath!)
-            );
-            const base64Image = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-            return {
-              ...artifact,
-              screenshot: base64Image
-            };
-          } catch (error) {
-            console.warn('Failed to load screenshot:', artifact.screenshotPath);
-            return artifact;
-          }
-        }
-        return artifact;
-      })
-    );
+    // Convert screenshot file paths to URLs for frontend
+    const artifactsWithUrls = test.lastRun.artifacts.map((artifact: ExecutionArtifact, index: number) => {
+      if (artifact.screenshotPath && existsSync(artifact.screenshotPath)) {
+        const filename = `${index}.png`;
+        const screenshotUrl = `/api/v2/screenshots/${params.id}/${filename}`;
+        return {
+          ...artifact,
+          screenshot: screenshotUrl
+        };
+      }
+      return artifact;
+    });
 
     return NextResponse.json({
-      artifacts: artifactsWithImages,
+      artifacts: artifactsWithUrls,
       status: test.lastRun.status,
       timestamp: test.lastRun.timestamp
     });

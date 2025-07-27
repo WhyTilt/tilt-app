@@ -25,6 +25,7 @@ import { TestFilterList } from '@/app/v2/shared/panels/test-filter-list';
 import { TaskEditorPanel } from '@/app/v2/shared/panels/task-editor';
 import { TagEditorPanel } from '@/app/v2/shared/panels/tag-editor';
 import { ExecutionPanel } from '@/app/v2/shared/panels/execution';
+import { TestHistory } from '@/app/v2/shared/panels/test-history';
 import { TestRunner } from '@/app/v2/test-runner';
 import { useTestRunner } from '@/app/v2/test-runner/context';
 import { ThemeProvider, useTheme } from '@/app/theme/context';
@@ -77,6 +78,7 @@ function HomeContent() {
   const [isTestExplorerOpen, setIsTestExplorerOpen] = useState(true);
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false);
   const [selectedTests, setSelectedTests] = useState<any[]>([]);
+  const [historyTest, setHistoryTest] = useState<any>(null);
   const { accentColor, setAccentColor } = useTheme();
   
   // Test runner state from context
@@ -398,6 +400,9 @@ function HomeContent() {
                 setIsTaskEditorOpen(true);
               }}
               onSelectedTestsChange={setSelectedTests}
+              onTestHistory={(test) => {
+                setHistoryTest(test);
+              }}
               />
           </SidePanel>
         </div>
@@ -810,6 +815,15 @@ function HomeContent() {
       
       {/* Test Runner - handles execution logic */}
       <TestRunner />
+
+      {/* Test History Modal */}
+      {historyTest && (
+        <TestHistory
+          testId={historyTest.id}
+          testName={historyTest.name}
+          onClose={() => setHistoryTest(null)}
+        />
+      )}
 
     </div>
   );

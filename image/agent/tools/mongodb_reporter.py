@@ -10,9 +10,9 @@ from .base import BaseAnthropicTool, ToolError, ToolResult
 
 class MongoDBReporterTool(BaseAnthropicTool):
     """
-    Tool for reporting task results back to MongoDB.
+    Tool for reporting test results back to MongoDB.
     This tool allows the agent to save results, updates, and completion status
-    back to the MongoDB tasks collection.
+    back to the MongoDB tests collection.
     """
     
     name: Literal["mongodb_reporter"] = "mongodb_reporter"
@@ -22,126 +22,137 @@ class MongoDBReporterTool(BaseAnthropicTool):
         super().__init__()
         self.client = MongoClient('mongodb://localhost:27017/')
         self.db = self.client.tilt
-        self.tasks_collection = self.db.tasks
-        
+        self.tests_collection = self.db.tests
     
     async def __call__(
         self,
         action: Literal["report_progress", "report_result", "report_error", "add_metadata"],
         data: Dict[str, Any],
-        task_id: Optional[str] = None
+        test_id: Optional[str] = None
     ) -> ToolResult:
         """
-        Report information back to MongoDB
+        Report test execution information back to MongoDB
         
         Args:
             action: Type of report (report_progress, report_result, report_error, add_metadata)
             data: Data to report
-            task_id: Task ID (uses current task if not provided, creates one-off task for standalone execution)
+            test_id: Test ID (required)
         """
         try:
-            # Handle one-off tasks by creating a temporary task record
-            if not task_id:
-                # Check for environment variable first
-                task_id = os.getenv('CURRENT_TASK_ID')
+            # Test ID is required
+            if not test_id:
+                return ToolResult(error="No test ID provided - test_id parameter is required")
+            
+            # Validate test exists
+            test = self.tests_collection.find_one({"_id": ObjectId(test_id)})
+            if not test:
+                return ToolResult(error=f"Test {test_id} not found")
+            
+            timestamp = datetime.now(timezone.utc).isoformat()
+            
+            # Create history entry
+            history_entry = {
+                "id": str(ObjectId()),
+                "timestamp": timestamp,
+                "status": "completed" if action == "report_result" else "error" if action == "report_error" else "running",
+                "artifacts": []
+            }
+            
+            # Extract artifacts from data if available
+            if "screenshots" in data:
+                import os
+                import base64
                 
-                if not task_id:
-                    # Create a one-off task record for standalone execution
-                    timestamp = datetime.now(timezone.utc)
-                    one_off_task = {
-                        "type": "one_off",
-                        "status": "running",
-                        "created_at": timestamp,
-                        "last_update": timestamp,
-                        "description": f"One-off task execution - {action}",
-                        "metadata": {
-                            "execution_mode": "standalone",
-                            "initial_action": action
+                # Create screenshots directory
+                screenshots_dir = "/home/ej-okelly/dev/tilt/tilt-app/image/nextjs/public/screenshots"
+                test_dir = os.path.join(screenshots_dir, test_id)
+                os.makedirs(test_dir, exist_ok=True)
+                
+                for i, screenshot in enumerate(data["screenshots"]):
+                    if isinstance(screenshot, str) and screenshot.startswith("data:image"):
+                        # Save base64 screenshot to file
+                        base64_data = screenshot.split(',')[1]
+                        filename = f"{i}.png"
+                        file_path = os.path.join(test_dir, filename)
+                        
+                        with open(file_path, 'wb') as f:
+                            f.write(base64.b64decode(base64_data))
+                        
+                        history_entry["artifacts"].append({
+                            "timestamp": timestamp,
+                            "screenshotPath": file_path,
+                            "thought": data.get("thoughts", [{}])[i] if i < len(data.get("thoughts", [])) else None
+                        })
+            
+            # If we have thoughts but no screenshots, add them as artifacts
+            if "thoughts" in data and not history_entry["artifacts"]:
+                for thought in data["thoughts"]:
+                    if thought:
+                        history_entry["artifacts"].append({
+                            "timestamp": timestamp,
+                            "thought": thought
+                        })
+            
+            # Add simple text result if available
+            if "result" in data or "message" in data:
+                history_entry["artifacts"].append({
+                    "timestamp": timestamp,
+                    "thought": data.get("result") or data.get("message")
+                })
+            
+            # ONLY save to database for final results - ignore progress reports
+            if action not in ["report_result", "report_error"]:
+                return ToolResult(output=f"Progress report ignored - only final results are saved to history")
+            
+            # Check if there's already execution data saved by the frontend
+            existing_test = self.tests_collection.find_one({"_id": ObjectId(test_id)})
+            
+            if existing_test and existing_test.get("lastRun"):
+                # Frontend has already saved execution data - just update the status
+                update_result = self.tests_collection.update_one(
+                    {"_id": ObjectId(test_id)},
+                    {
+                        "$set": {
+                            "lastRun.status": "completed" if action == "report_result" else "error",
+                            "updated_at": timestamp
                         }
                     }
-                    
-                    result = self.tasks_collection.insert_one(one_off_task)
-                    task_id = str(result.inserted_id)
-            
-            # Validate task exists
-            task = self.tasks_collection.find_one({"_id": ObjectId(task_id)})
-            if not task:
-                return ToolResult(error=f"Task {task_id} not found")
-            
-            timestamp = datetime.now(timezone.utc)
-            
-            if action == "report_progress":
-                # Update progress information
-                update_data = {
-                    "last_update": timestamp,
-                    "progress": data
-                }
+                )
                 
-                # Add to progress history
-                self.tasks_collection.update_one(
-                    {"_id": ObjectId(task_id)},
+                # Also update the history entry status if it exists
+                if existing_test.get("history"):
+                    # Update the last history entry status
+                    self.tests_collection.update_one(
+                        {"_id": ObjectId(test_id)},
+                        {
+                            "$set": {
+                                "history.$[elem].status": "completed" if action == "report_result" else "error"
+                            }
+                        },
+                        array_filters=[{"elem.id": existing_test["lastRun"]["id"]}]
+                    )
+            else:
+                # No existing execution data - save a minimal completion entry  
+                update_result = self.tests_collection.update_one(
+                    {"_id": ObjectId(test_id)},
                     {
-                        "$set": update_data,
+                        "$set": {
+                            "lastRun": history_entry,
+                            "updated_at": timestamp
+                        },
                         "$push": {
-                            "progress_history": {
-                                "timestamp": timestamp,
-                                "data": data
+                            "history": {
+                                "$each": [history_entry],
+                                "$slice": -50  # Keep only last 50 runs
                             }
                         }
                     }
                 )
-                
-                return ToolResult(output=f"Progress reported for task {task_id}")
-                
-            elif action == "report_result":
-                # Report final result and mark as passed
-                update_data = {
-                    "status": "passed",
-                    "completed_at": timestamp,
-                    "result": data,
-                    "last_update": timestamp
-                }
-                
-                self.tasks_collection.update_one(
-                    {"_id": ObjectId(task_id)},
-                    {"$set": update_data}
-                )
-                
-                return ToolResult(output=f"Result reported and task {task_id} marked as passed")
-                
-            elif action == "report_error":
-                # Report error and mark task as failed
-                update_data = {
-                    "status": "error",
-                    "completed_at": timestamp,
-                    "error": data.get("error", "Unknown error"),
-                    "error_details": data,
-                    "last_update": timestamp
-                }
-                
-                self.tasks_collection.update_one(
-                    {"_id": ObjectId(task_id)},
-                    {"$set": update_data}
-                )
-                
-                return ToolResult(output=f"Error reported for task {task_id}")
-                
-            elif action == "add_metadata":
-                # Add metadata to task
-                self.tasks_collection.update_one(
-                    {"_id": ObjectId(task_id)},
-                    {
-                        "$set": {
-                            f"metadata.{key}": value for key, value in data.items()
-                        },
-                        "$set": {"last_update": timestamp}
-                    }
-                )
-                
-                return ToolResult(output=f"Metadata added to task {task_id}")
-                
+            
+            if update_result.modified_count > 0:
+                return ToolResult(output=f"Test execution saved with history for test {test_id}")
             else:
-                return ToolResult(error=f"Unknown action: {action}")
+                return ToolResult(error=f"Failed to update test {test_id}")
                 
         except Exception as e:
             return ToolResult(error=f"MongoDB Reporter error: {str(e)}")
@@ -149,19 +160,19 @@ class MongoDBReporterTool(BaseAnthropicTool):
     def to_params(self) -> Dict[str, Any]:
         return {
             "name": self.name,
-            "description": """Report task progress, results, errors, or metadata back to MongoDB.
+            "description": """Report test progress, results, errors, or metadata back to MongoDB.
 
 CRITICAL: When reporting captured data structures (especially JSON from network requests), preserve the COMPLETE raw JSON structure exactly as captured. Do NOT summarize, interpret, or create descriptions - pass the full JSON objects intact.
             
 Use this tool to:
-- Report progress updates during task execution
-- Report final results when task is complete (preserve raw JSON data structures)
-- Report errors if task fails
+- Report progress updates during test execution
+- Report final results when test is complete (preserve raw JSON data structures)
+- Report errors if test fails
 - Add metadata or additional information
 
 Examples:
-- Report progress: action="report_progress", data={"step": "completed navigation", "screenshot": "base64..."}
-- Report result with raw JSON: action="report_result", data={"success": true, "raw_analytics_json": {"complete": "json structure here"}}
+- Report progress: action="report_progress", data={"step": "completed navigation", "screenshots": ["base64..."], "thoughts": ["Navigating to page"]}
+- Report result: action="report_result", data={"success": true, "result": "Test completed successfully"}
 - Report error: action="report_error", data={"error": "Failed to find element", "details": "..."}
 - Add metadata: action="add_metadata", data={"browser": "firefox", "execution_time": 45}
             """,
@@ -177,9 +188,9 @@ Examples:
                         "type": "object",
                         "description": "Data to report - structure depends on action type"
                     },
-                    "task_id": {
+                    "test_id": {
                         "type": "string",
-                        "description": "Optional task ID (uses current task if not provided)"
+                        "description": "Optional test ID (uses current test if not provided)"
                     }
                 },
                 "required": ["action", "data"]

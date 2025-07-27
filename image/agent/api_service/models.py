@@ -14,6 +14,7 @@ class ChatRequest(BaseModel):
     max_tokens: int = 4096
     thinking_budget: Optional[int] = None
     token_efficient_tools_beta: bool = False
+    test_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     messages: List[ChatMessage]

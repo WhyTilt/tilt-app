@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, FileText, Play, Square, Tag, Plus, X, Edit2, Trash2, ChevronDown } from 'lucide-react';
+import { Search, Filter, FileText, Play, Square, Tag, Plus, X, Edit2, Trash2, ChevronDown, History } from 'lucide-react';
 import { useTestRunner } from '@/app/v2/test-runner/context';
 
 interface Test {
@@ -31,9 +31,10 @@ interface TestFilterListProps {
   onTagEditorOpen?: () => void;
   onTestCreate?: (test: Test) => void;
   onSelectedTestsChange?: (tests: Test[]) => void;
+  onTestHistory?: (test: Test) => void;
 }
 
-export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTagEditorOpen, onTestCreate, onSelectedTestsChange }: TestFilterListProps) {
+export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTagEditorOpen, onTestCreate, onSelectedTestsChange, onTestHistory }: TestFilterListProps) {
   const { startExecution, stopExecution, runState } = useTestRunner();
   const [tests, setTests] = useState<Test[]>([]);
   const [filteredTests, setFilteredTests] = useState<Test[]>([]);
@@ -479,37 +480,19 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        {/* Status Badge and Agent Head */}
+                        {/* Status Badge */}
                         {(() => {
                           const statusInfo = getTestStatus(test);
                           return (
-                            <>
-                              <img 
-                                src="/agent-head.png" 
-                                alt="Agent Status"
-                                className={`w-4 h-4 ${!hasSteps ? "opacity-30" : ""}`}
-                                style={{
-                                  filter: !hasSteps 
-                                    ? "grayscale(1) opacity(0.3)" 
-                                    : statusInfo.status === 'PASS'
-                                      ? "brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)" // green
-                                      : statusInfo.status === 'FAIL'
-                                        ? "brightness(0) saturate(100%) invert(18%) sepia(77%) saturate(7496%) hue-rotate(358deg) brightness(97%) contrast(94%)" // red
-                                        : statusInfo.status === 'RUN'
-                                          ? "brightness(0) saturate(100%) invert(82%) sepia(60%) saturate(2141%) hue-rotate(2deg) brightness(119%) contrast(115%)" // yellow
-                                          : "grayscale(1) opacity(0.6)" // gray for pending
-                                }}
-                              />
-                              <div 
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${
-                                  !hasSteps ? 'opacity-30' : ''
-                                }`}
-                                style={{ backgroundColor: statusInfo.color }}
-                                title={`Status: ${statusInfo.status}`}
-                              >
-                                {statusInfo.status}
-                              </div>
-                            </>
+                            <div 
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${
+                                !hasSteps ? 'opacity-30' : ''
+                              }`}
+                              style={{ backgroundColor: statusInfo.color }}
+                              title={`Status: ${statusInfo.status}`}
+                            >
+                              {statusInfo.status}
+                            </div>
                           );
                         })()}
                         <span className={`font-medium text-sm ${hasSteps ? "text-white" : "text-gray-400"} truncate`}>
@@ -551,54 +534,70 @@ export function TestFilterList({ className = '', onTestSelect, onTestEdit, onTag
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {/* Edit button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onTestEdit) {
-                            onTestEdit(test);
-                          }
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-white transition-all"
-                        title="Edit Test"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      
-                      {/* Delete button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteTest(test.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-400 transition-all"
-                        title="Delete Test"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      
-                      {/* Custom Checkbox */}
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (hasSteps) toggleTestSelection(test);
-                        }}
-                        className={`
-                          w-4 h-4 rounded border-2 flex items-center justify-center transition-all
-                          ${isSelected 
-                            ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
-                            : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
-                          }
-                          ${!hasSteps ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
-                        `}
-                      >
-                        {isSelected && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* Edit button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onTestEdit) {
+                              onTestEdit(test);
+                            }
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-white transition-all"
+                          title="Edit Test"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTest(test.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-400 transition-all"
+                          title="Delete Test"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        
+                        {/* Custom Checkbox */}
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (hasSteps) toggleTestSelection(test);
+                          }}
+                          className={`
+                            w-4 h-4 rounded border-2 flex items-center justify-center transition-all
+                            ${isSelected 
+                              ? 'bg-[var(--accent-color)] border-[var(--accent-color)]' 
+                              : 'border-gray-400 bg-transparent hover:border-[var(--accent-color)]'
+                            }
+                            ${!hasSteps ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+                          `}
+                        >
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
                       </div>
+                      
+                      {/* History button - positioned below the checkbox */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onTestHistory) {
+                            onTestHistory(test);
+                          }
+                        }}
+                        className="p-1 text-gray-400 hover:text-white transition-all"
+                        title="View Test History"
+                      >
+                        <History size={14} />
+                      </button>
                     </div>
                   </div>
                 </div>

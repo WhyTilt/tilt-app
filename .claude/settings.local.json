@@ -138,7 +138,11 @@
       "Bash(powershell.exe:*)",
       "Bash(uv venv:*)",
       "Bash(uv add:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(npx tsc:*)",
+      "Bash(./build/build.sh:*)",
+      "Bash(newgrp:*)",
+      "Bash(sg docker:*)"
     ],
     "deny": []
   }
