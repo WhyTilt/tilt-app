@@ -140,7 +140,7 @@ $imageExists = docker image inspect "$LOCAL_IMAGE" 2>$null
 if (-not $imageExists) {
     Write-Host "Error: Image $LOCAL_IMAGE not found!"
     Write-Host "Building image first..."
-    & ".\build.ps1"
+    & ".\build\build.ps1"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error: Build failed!"
         exit 1
